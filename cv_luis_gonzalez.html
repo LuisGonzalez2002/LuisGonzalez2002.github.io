@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luis Gonzalez — Data Scientist</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #10101a;
+    --surface2: #161625;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --border: rgba(0,229,255,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: end;
+    margin-bottom: 56px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp 0.7s ease both;
+  }
+
+  .name-block {}
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.05em;
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  .contact-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .contact-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .contact-item:hover { color: var(--accent); }
+  .contact-item .dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── MAIN GRID ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 48px;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── PROFILE ── */
+  .profile-text {
+    font-size: 15px;
+    line-height: 1.75;
+    color: #b0b0c8;
+    margin-bottom: 48px;
+    padding: 24px;
+    background: var(--surface);
+    border-left: 2px solid var(--accent);
+    animation: fadeUp 0.7s 0.1s ease both;
+  }
+
+  /* ── EXPERIENCE ── */
+  .exp-block {
+    margin-bottom: 48px;
+    animation: fadeUp 0.7s 0.2s ease both;
+  }
+
+  .job {
+    margin-bottom: 36px;
+    position: relative;
+    padding-left: 24px;
+  }
+
+  .job::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .job::after {
+    content: '';
+    position: absolute;
+    left: 2.5px; top: 20px;
+    width: 1px;
+    height: calc(100% + 10px);
+    background: linear-gradient(to bottom, var(--accent), transparent);
+  }
+
+  .job:last-child::after { display: none; }
+
+  .job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .job-company {
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+  }
+
+  .job-date {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent3);
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 2px;
+  }
+
+  .job-title {
+    font-size: 12px;
+    color: var(--accent2);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .job-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .job-bullets li {
+    font-size: 13px;
+    color: #8888aa;
+    line-height: 1.5;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .job-bullets li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── TFM ── */
+  .tfm-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    margin-bottom: 48px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.7s 0.3s ease both;
+  }
+
+  .tfm-block::before {
+    content: 'TFM';
+    position: absolute;
+    right: -10px; top: -10px;
+    font-size: 80px;
+    font-weight: 800;
+    color: rgba(124,58,237,0.08);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .tfm-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .tfm-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .project-links {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .project-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid;
+    letter-spacing: 0.04em;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .project-btn:hover { transform: translateY(-2px); }
+  .project-btn:hover .project-arrow { transform: translateX(4px); }
+  .project-arrow { display: inline-block; transition: transform 0.2s; }
+  .project-btn-tfm {
+    border-color: rgba(0,229,255,0.5);
+    color: #00e5ff;
+    background: rgba(0,229,255,0.06);
+  }
+  .project-btn-tfm:hover { background: rgba(0,229,255,0.12); box-shadow: 0 4px 16px rgba(0,229,255,0.15); }
+  .project-btn-de {
+    border-color: rgba(124,58,237,0.5);
+    color: #a78bfa;
+    background: rgba(124,58,237,0.06);
+  }
+  .project-btn-de:hover { background: rgba(124,58,237,0.12); box-shadow: 0 4px 16px rgba(124,58,237,0.15); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    animation: fadeUp 0.7s 0.15s ease both;
+  }
+
+  .sidebar-section {}
+
+  /* ── SKILLS PILLS ── */
+  .skill-category {
+    margin-bottom: 16px;
+  }
+
+  .skill-cat-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .pill:hover {
+    transform: translateY(-2px);
+  }
+
+  .pill-ds {
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.25);
+    color: var(--accent);
+  }
+  .pill-ds:hover { background: rgba(0,229,255,0.15); }
+
+  .pill-de {
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.25);
+    color: #a78bfa;
+  }
+  .pill-de:hover { background: rgba(124,58,237,0.15); }
+
+  .pill-cloud {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--accent3);
+  }
+  .pill-cloud:hover { background: rgba(245,158,11,0.15); }
+
+  .pill-db {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.25);
+    color: #34d399;
+  }
+  .pill-db:hover { background: rgba(16,185,129,0.15); }
+
+  /* ── EDUCATION ── */
+  .edu-item {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-left: 2px solid var(--accent2);
+  }
+
+  .edu-degree {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+
+  .edu-school {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 2px;
+  }
+
+  .edu-year {
+    font-size: 10px;
+    color: var(--accent3);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ── CERTS ── */
+  .cert-item {
+    font-size: 11px;
+    color: #7777aa;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+  }
+  .cert-item:last-child { border-bottom: none; }
+  .cert-item::before {
+    content: '◆';
+    font-size: 6px;
+    color: var(--accent3);
+    flex-shrink: 0;
+  }
+
+  /* ── LANGUAGES ── */
+  .lang-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .lang-row:last-child { border-bottom: none; }
+  .lang-name { font-size: 13px; font-weight: 600; }
+  .lang-level {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .lang-bar {
+    height: 2px;
+    background: var(--surface2);
+    border-radius: 1px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .lang-fill {
+    height: 100%;
+    border-radius: 1px;
+    background: linear-gradient(to right, var(--accent), var(--accent2));
+    transition: width 1s ease;
+  }
+
+  /* ── STAT NUMBERS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.7s 0.25s ease both;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 12px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body::before { display: none; }
+    .wrapper { padding: 24px; }
+  }
+
+  /* ── SCANLINE effect ── */
+  .scanline {
+    position: fixed;
+    top: -100%;
+    left: 0; right: 0;
+    height: 200px;
+    background: linear-gradient(to bottom,
+      transparent,
+      rgba(0,229,255,0.015),
+      transparent
+    );
+    animation: scan 6s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes scan {
+    from { top: -200px; }
+    to   { top: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="name-block">
+      <div class="tag">Data Scientist · Data Engineer</div>
+      <h1>Luis<br><span>Gonzalez</span></h1>
+      <p class="subtitle">Convirtiendo datos en decisiones desde hace más de 2 años. Experto en pipelines, ML y arquitecturas cloud.</p>
+    </div>
+    <div class="contact-block">
+      <a class="contact-item" href="tel:+34635015075"><span class="dot"></span>+34 635 015 075</a>
+      <a class="contact-item" href="/cdn-cgi/l/email-protection#0468716d772a636b6a7e6568617e3634343630353d446369656d682a676b69"><span class="dot"></span><span class="__cf_email__" data-cfemail="1a766f7369347d7574607b767f60282a2a282e2b235a7d777b737634797577">[email&#160;protected]</span></a>
+      <a class="contact-item" href="#"><span class="dot"></span>LinkedIn</a>
+      <a class="contact-item" href="#"><span class="dot"></span>GitHub</a>
+    </div>
+  </header>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-number">2+</div>
+      <div class="stat-label">años exp.</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">6</div>
+      <div class="stat-label">certificaciones</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">3+</div>
+      <div class="stat-label">stacks cloud</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="left-col">
+
+      <!-- PROFILE -->
+      <div class="profile-text">
+        Data Scientist con sólida base en análisis de datos y Data Engineering. Experiencia en preparación, limpieza y modelado de datos para análisis avanzado, así como en la aplicación de técnicas de Machine Learning en proyectos aplicados. Experiencia trabajando con grandes volúmenes de datos en entornos cloud y colaborando en proyectos internacionales.
+      </div>
+
+      <!-- EXPERIENCE -->
+      <div class="exp-block">
+        <div class="section-label">Experiencia</div>
+
+        <div class="job">
+          <div class="job-header">
+            <div class="job-company">SDG Group</div>
+            <div class="job-date">Jun 2025 — Actualidad</div>
+          </div>
+          <div class="job-title">Data Scientist | Data Engineer</div>
+          <ul class="job-bullets">
+            <li>Proyectos de Data Science aplicada: desde preparación avanzada de datos hasta validación de datasets para modelos analíticos y predictivos.</li>
+            <li>Análisis exploratorio (EDA), feature engineering y definición de métricas de negocio.</li>
+            <li>Desarrollo de pipelines de datos escalables (arquitectura Medallion) con PySpark, dbt y Snowflake.</li>
+            <li>POCs de analítica avanzada y LLMs, incluyendo generación de SQL a partir de lenguaje natural mediante capa semántica.</li>
+            <li>APIs y dashboards analíticos con Docker, Azure y Streamlit.</li>
+            <li>Equipos internacionales (USA y Europa) con metodologías ágiles — Scrum, Jira, Confluence.</li>
+          </ul>
+          <div class="project-links">
+            <a class="project-btn project-btn-de" href="de_pipeline_flow.html" target="_blank">
+              <span>⚙</span> Ver DE Pipeline Flow <span class="project-arrow">→</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="job">
+          <div class="job-header">
+            <div class="job-company">PwC España</div>
+            <div class="job-date">Ene 2025 — Jun 2025</div>
+          </div>
+          <div class="job-title">Data Analyst</div>
+          <ul class="job-bullets">
+            <li>Análisis y validación de grandes volúmenes de datos para casos de uso analíticos y exploratorios.</li>
+            <li>Limpieza, transformación y preparación de datasets con Python, SQL y Alteryx.</li>
+            <li>Automatización de procesos manuales con Python: procesamiento de imágenes y generación de ficheros estructurados.</li>
+            <li>Soporte analítico y técnico a equipos corporativos en proyectos basados en datos.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- TFM -->
+      <div class="tfm-block">
+        <div class="section-label">Proyecto Fin de Máster</div>
+        <div class="tfm-title">Predicción de tráfico con TomTom</div>
+        <div class="tfm-subtitle">Master en Big Data Science · Universidad de Navarra</div>
+        <ul class="job-bullets">
+          <li>Integración de datos de tráfico y clima en tiempo real.</li>
+          <li>Feature engineering con datos geoespaciales (OpenStreetMap).</li>
+          <li>Entrenamiento y evaluación de modelos predictivos.</li>
+          <li>Mejora del rendimiento frente a modelos baseline.</li>
+        </ul>
+        <div class="project-links">
+          <a class="project-btn project-btn-tfm" href="tfm_mapa_interactivo.html" target="_blank">
+            <span>🗺</span> Mapa interactivo TFM <span class="project-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- SKILLS -->
+      <div class="sidebar-section">
+        <div class="section-label">Skills</div>
+
+        <div class="skill-category">
+          <div class="skill-cat-name">Data Science & ML</div>
+          <div class="pills">
+            <span class="pill pill-ds">Python</span>
+            <span class="pill pill-ds">Pandas</span>
+            <span class="pill pill-ds">NumPy</span>
+            <span class="pill pill-ds">Scikit-learn</span>
+            <span class="pill pill-ds">EDA</span>
+            <span class="pill pill-ds">Feature Eng.</span>
+          </div>
+        </div>
+
+        <div class="skill-category">
+          <div class="skill-cat-name">Data Engineering</div>
+          <div class="pills">
+            <span class="pill pill-de">dbt</span>
+            <span class="pill pill-de">Spark</span>
+            <span class="pill pill-de">PySpark</span>
+            <span class="pill pill-de">Snowflake</span>
+            <span class="pill pill-de">Databricks</span>
+          </div>
+        </div>
+
+        <div class="skill-category">
+          <div class="skill-cat-name">Cloud & DevOps</div>
+          <div class="pills">
+            <span class="pill pill-cloud">AWS</span>
+            <span class="pill pill-cloud">Azure</span>
+            <span class="pill pill-cloud">Docker</span>
+            <span class="pill pill-cloud">CI/CD</span>
+          </div>
+        </div>
+
+        <div class="skill-category">
+          <div class="skill-cat-name">Bases de datos & Viz</div>
+          <div class="pills">
+            <span class="pill pill-db">SQL</span>
+            <span class="pill pill-db">PostgreSQL</span>
+            <span class="pill pill-db">MongoDB</span>
+            <span class="pill pill-db">Power BI</span>
+            <span class="pill pill-db">Streamlit</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDUCATION -->
+      <div class="sidebar-section">
+        <div class="section-label">Educación</div>
+        <div class="edu-item">
+          <div class="edu-degree">Master en Big Data Science</div>
+          <div class="edu-school">Universidad de Navarra</div>
+          <div class="edu-year">2024 — 2025</div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-degree">Ingeniería Informática</div>
+          <div class="edu-school">Universidad Alfonso X el Sabio</div>
+          <div class="edu-year">2020 — 2024</div>
+        </div>
+      </div>
+
+      <!-- CERTS -->
+      <div class="sidebar-section">
+        <div class="section-label">Certificaciones</div>
+        <div class="cert-item">AWS Certified Cloud Practitioner</div>
+        <div class="cert-item">dbt Fundamentals — dbt Labs</div>
+        <div class="cert-item">Alteryx Designer Core</div>
+        <div class="cert-item">Power BI Finisher — thePower</div>
+        <div class="cert-item">Data Visualization in Power BI</div>
+        <div class="cert-item">Curso Maestro de Python</div>
+      </div>
+
+      <!-- LANGUAGES -->
+      <div class="sidebar-section">
+        <div class="section-label">Idiomas</div>
+        <div class="lang-row">
+          <div>
+            <div class="lang-name">Español</div>
+            <div class="lang-bar"><div class="lang-fill" style="width:100%"></div></div>
+          </div>
+          <div class="lang-level">Nativo</div>
+        </div>
+        <div class="lang-row">
+          <div>
+            <div class="lang-name">Inglés</div>
+            <div class="lang-bar"><div class="lang-fill" style="width:82

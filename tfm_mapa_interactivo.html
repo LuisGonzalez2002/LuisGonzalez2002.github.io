@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TFM · Predicción de Tramos de Concentración de Accidentes — Madrid</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<style>
+:root{--bg:#07070f;--surface:#0f0f1c;--surface2:#15152a;--accent:#00e5ff;--accent2:#7c3aed;--accent3:#f59e0b;--danger:#ef4444;--safe:#22c55e;--text:#e2e2f0;--muted:#5a5a7a;--border:rgba(0,229,255,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px);background-size:36px 36px;pointer-events:none;z-index:0}
+.topbar{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(7,7,15,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.topbar-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.3em;color:var(--accent);text-transform:uppercase}
+.topbar-name{font-weight:800;font-size:13px;color:#fff}
+.topbar-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.tomtom-badge{font-family:'Space Mono',monospace;font-size:9px;border:1px solid rgba(124,58,237,0.5);padding:4px 10px;color:#a78bfa;letter-spacing:0.1em;background:rgba(124,58,237,0.08)}
+.status-dot{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:var(--safe)}
+.dot-pulse{width:7px;height:7px;border-radius:50%;background:var(--safe);animation:pulse 2s ease infinite}
+.layout{display:grid;grid-template-columns:295px 1fr;height:calc(100vh - 53px);position:relative;z-index:1}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border)}
+.sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sec-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.25em;color:var(--accent);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.model-card{background:var(--surface2);border:1px solid var(--border);padding:11px;margin-bottom:7px}
+.model-card.winner{border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.04)}
+.model-name{font-size:11px;font-weight:700;color:#fff;margin-bottom:1px}
+.model-type{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:7px}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid rgba(255,255,255,0.04)}
+.metric-name{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+.metric-val{font-family:'Space Mono',monospace;font-size:10px;font-weight:700}
+.g{color:var(--safe)}.w{color:var(--accent3)}.c{color:var(--accent)}
+.toggle-group{display:flex;flex-direction:column;gap:5px}
+.toggle-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border:1px solid transparent;cursor:pointer;transition:all 0.2s;user-select:none}
+.toggle-item:hover{border-color:var(--border)}
+.toggle-item.active{border-color:var(--accent);background:rgba(0,229,255,0.05)}
+.toggle-left{display:flex;align-items:center;gap:8px}
+.toggle-color{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.toggle-label{font-size:11px;font-weight:600}
+.toggle-sub{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-top:1px}
+.toggle-switch{width:28px;height:15px;border-radius:8px;background:var(--surface);border:1px solid var(--muted);position:relative;transition:all 0.2s;flex-shrink:0}
+.toggle-switch::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:all 0.2s}
+.toggle-item.active .toggle-switch{background:rgba(0,229,255,0.2);border-color:var(--accent)}
+.toggle-item.active .toggle-switch::after{background:var(--accent);left:14px;box-shadow:0 0 5px var(--accent)}
+.franja-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.franja-btn{padding:7px 5px;text-align:center;border:1px solid var(--border);cursor:pointer;background:var(--surface2);transition:all 0.2s;font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;line-height:1.4}
+.franja-btn:hover{border-color:var(--accent);color:var(--accent)}
+.franja-btn.active{border-color:var(--accent);background:rgba(0,229,255,0.08);color:var(--accent)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.stat-box{background:var(--surface2);border:1px solid var(--border);padding:9px 7px;text-align:center}
+.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;line-height:1;margin-bottom:2px}
+.stat-lbl{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.shap-list{display:flex;flex-direction:column;gap:5px}
+.shap-item{display:flex;flex-direction:column;gap:3px}
+.shap-top{display:flex;justify-content:space-between;align-items:center}
+.shap-name{font-family:'Space Mono',monospace;font-size:8px;color:var(--text)}
+.shap-pct{font-family:'Space Mono',monospace;font-size:9px;color:var(--accent);font-weight:700}
+.shap-bar-bg{height:3px;background:rgba(255,255,255,0.06);border-radius:2px}
+.shap-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.legend-bar{height:6px;border-radius:3px;background:linear-gradient(to right,#22c55e,#eab308,#ef4444);margin-bottom:5px}
+.legend-labels{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)}
+.point-info{background:var(--surface2);border:1px solid var(--accent);padding:11px;display:none}
+.point-info.visible{display:block}
+.point-title{font-size:11px;font-weight:700;color:#fff;margin-bottom:6px}
+.point-row{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:8px;padding:3px 0;border-top:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+.point-row span:last-child{color:var(--text)}
+.no-point{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);line-height:1.6}
+#map{width:100%;height:100%;z-index:1}
+.leaflet-tile{filter:brightness(0.55) saturate(0.3) hue-rotate(185deg)}
+.leaflet-container{background:#080812}
+.map-badge{position:absolute;z-index:1000;bottom:10px;right:10px;background:rgba(7,7,15,0.85);border:1px solid var(--border);backdrop-filter:blur(8px);padding:5px 10px;font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:0.06em;pointer-events:none}
+.custom-tooltip{background:#0f0f1c;border:1px solid rgba(0,229,255,0.3);color:#e2e2f0;font-family:'Space Mono',monospace;font-size:10px;border-radius:0;padding:4px 8px;box-shadow:0 0 10px rgba(0,229,255,0.1)}
+.custom-tooltip::before{display:none}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-label">TFM · Master Big Data Science · UNAV 2024–2025</div>
+    <div class="topbar-name">Predicción de Tramos de Concentración de Accidentes — Madrid</div>
+    <div class="topbar-sub">Bouso · González · Montt &nbsp;·&nbsp; Tutores: Miranda Galcerán · El Kadi · Navarro</div>
+  </div>
+  <div class="topbar-right">
+    <a href="cv_luis_gonzalez.html" target="_blank" style="font-family:'Space Mono',monospace;font-size:9px;border:1px solid rgba(0,229,255,0.35);padding:4px 12px;color:#00e5ff;background:rgba(0,229,255,0.06);text-decoration:none;letter-spacing:0.1em;transition:all 0.2s;" onmouseover="this.style.background='rgba(0,229,255,0.12)'" onmouseout="this.style.background='rgba(0,229,255,0.06)'">← CV</a>
+    <div class="tomtom-badge">EN COLABORACIÓN CON TOMTOM</div>
+    <div class="status-dot"><div class="dot-pulse"></div>Datos reales · Ayto. Madrid 2022–2024</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sec-label">Modelo final</div>
+      <div class="model-card winner">
+        <div class="model-name">🏆 Stacking Regressor</div>
+        <div class="model-type">RF + XGB → ElasticNetCV (meta-modelo)</div>
+        <div class="metric-row"><span class="metric-name">RMSE</span><span class="metric-val g">0.003975</span></div>
+        <div class="metric-row"><span class="metric-name">MAE</span><span class="metric-val g">0.001895</span></div>
+        <div class="metric-row"><span class="metric-name">R²</span><span class="metric-val g">0.528</span></div>
+        <div class="metric-row"><span class="metric-name">Mejora vs Baseline</span><span class="metric-val g">−51%</span></div>
+      </div>
+      <div class="model-card">
+        <div class="model-name">Baseline (DummyRegressor)</div>
+        <div class="model-type">Media global · cota mínima de referencia</div>
+        <div class="metric-row"><span class="metric-name">RMSE</span><span class="metric-val w">0.008116</span></div>
+        <div class="metric-row"><span class="metric-name">R²</span><span class="metric-val w">≈ 0.00</span></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Capas del mapa</div>
+      <div class="toggle-group">
+        <div class="toggle-item active" id="toggle-heat" onclick="toggleLayer('heat')">
+          <div class="toggle-left">
+            <div class="toggle-color" style="background:radial-gradient(#ef4444,#f59e0b)"></div>
+            <div><div class="toggle-label">Heatmap de riesgo</div><div class="toggle-sub">Probabilidad predicha · Stacking</div></div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item active" id="toggle-clusters" onclick="toggleLayer('clusters')">
+          <div class="toggle-left">
+            <div class="toggle-color" style="background:#ef4444"></div>
+            <div><div class="toggle-label">Top clusters TCA</div><div class="toggle-sub">HDBSCAN · datos reales 2022–2024</div></div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item active" id="toggle-paradox" onclick="toggleLayer('paradox')">
+          <div class="toggle-left">
+            <div class="toggle-color" style="background:#f59e0b"></div>
+            <div><div class="toggle-label">Top 5 combinaciones riesgo</div><div class="toggle-sub">Baja intensidad · alta siniestralidad</div></div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item" id="toggle-safe" onclick="toggleLayer('safe')">
+          <div class="toggle-left">
+            <div class="toggle-color" style="background:#22c55e"></div>
+            <div><div class="toggle-label">Zonas seguras</div><div class="toggle-sub">Alta intensidad · baja siniestralidad</div></div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Franja horaria</div>
+      <div class="franja-grid">
+        <div class="franja-btn active" id="franja-manana" onclick="setFranja('manana')">☀️ Mañana<br>06–12h</div>
+        <div class="franja-btn" id="franja-tarde" onclick="setFranja('tarde')">🌤 Almuerzo<br>12–17h</div>
+        <div class="franja-btn" id="franja-salida" onclick="setFranja('salida')">🌆 Salida/noche<br>17–00h ⚠️</div>
+        <div class="franja-btn" id="franja-noche" onclick="setFranja('noche')">🌙 Madrugada<br>00–06h</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Dataset real · 2022–2024</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">3.433</div><div class="stat-lbl">registros modelo</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--danger)">18K+</div><div class="stat-lbl">accidentes hist.</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--safe)">−51%</div><div class="stat-lbl">RMSE vs base</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">5.8GB</div><div class="stat-lbl">datos tráfico</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">SHAP · importancia variables</div>
+      <div class="shap-list">
+        <div class="shap-item">
+          <div class="shap-top"><span class="shap-name">hora_cos (franja horaria)</span><span class="shap-pct">25.4%</span></div>
+          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:100%"></div></div>
+        </div>
+        <div class="shap-item">
+          <div class="shap-top"><span class="shap-name">tipo_entorno: intersección</span><span class="shap-pct">18.7%</span></div>
+          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:74%"></div></div>
+        </div>
+        <div class="shap-item">
+          <div class="shap-top"><span class="shap-name">ángulo intersección</span><span class="shap-pct">16.1%</span></div>
+          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:63%"></div></div>
+        </div>
+        <div class="shap-item">
+          <div class="shap-top"><span class="shap-name">vel_dif (diferencia velocidades)</span><span class="shap-pct">6.9%</span></div>
+          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:27%"></div></div>
+        </div>
+        <div class="shap-item">
+          <div class="shap-top"><span class="shap-name">estado_meteorológico</span><span class="shap-pct">4.9%</span></div>
+          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:19%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Escala de riesgo</div>
+      <div class="legend-bar"></div>
+      <div class="legend-labels"><span>Bajo (0%)</span><span>Medio</span><span>Alto (39%)</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sec-label">Cluster seleccionado</div>
+      <div class="point-info" id="point-info">
+        <div class="point-title" id="pt-title">—</div>
+        <div class="point-row"><span>Accidentes totales</span><span id="pt-acc">—</span></div>
+        <div class="point-row"><span>Probabilidad predicha</span><span id="pt-prob">—</span></div>
+        <div class="point-row"><span>Tipo de entorno</span><span id="pt-entorno">—</span></div>
+        <div class="point-row"><span>Franja activa</span><span id="pt-franja">—</span></div>
+        <div class="point-row"><span>Índice peligrosidad</span><span id="pt-idx">—</span></div>
+        <div class="point-row"><span>Localización</span><span id="pt-loc" style="max-width:130px;text-align:right;font-size:7px">—</span></div>
+      </div>
+      <div class="no-point" id="no-point">Haz clic en un punto del mapa para ver los datos reales del cluster.</div>
+    </div>
+
+  </div>
+
+  <div style="position:relative">
+    <div id="map"></div>
+    <div class="map-badge">© OpenStreetMap · Leaflet · Datos: Ayto. Madrid + OSM · TFM UNAV 2025 · En colaboración con TomTom</div>
+  </div>
+</div>
+
+<script>
+// Datos reales del TFM (Cuadro 7 - Top clusters por accidentes)
+const topClusters = [
+  {id:2746,lat:40.4400,lng:-3.6890,acc:268,loc:'Paseo Castellana · Joaquín Costa',prob:0.045,entorno:'Intersección',idx:16.80},
+  {id:1994,lat:40.4520,lng:-3.7070,acc:162,loc:'Av. Memoria · Frente Farola',prob:0.032,entorno:'Intersección',idx:12.54},
+  {id:3926,lat:40.4230,lng:-3.6640,acc:159,loc:'C/ Alcalá · Puente de Ventas',prob:0.028,entorno:'Intersección',idx:10.20},
+  {id:1980,lat:40.4410,lng:-3.7130,acc:158,loc:'Plaza Cristo Rey · S. Francisco de Sales',prob:0.031,entorno:'Rotonda',idx:9.80},
+  {id:3566,lat:40.4088,lng:-3.6921,acc:152,loc:'Plaza Emp. Carlos V · Pº Sta. M. de la Cabeza',prob:0.041,entorno:'Intersección',idx:9.50},
+  {id:3450,lat:40.4530,lng:-3.6770,acc:150,loc:'Av. América · C/ Cartagena',prob:0.039,entorno:'Intersección',idx:9.20},
+  {id:3984,lat:40.4193,lng:-3.7040,acc:140,loc:'C/ Gran Vía · San Bernardo',prob:0.036,entorno:'Intersección',idx:8.90},
+  {id:1776,lat:40.4370,lng:-3.6810,acc:130,loc:'C/ Príncipe de Vergara · Pl. Cataluña',prob:0.027,entorno:'Intersección',idx:7.80},
+  {id:3679,lat:40.3985,lng:-3.6720,acc:124,loc:'C/ Méndez Álvaro · Pedro Bosch',prob:0.033,entorno:'Nada',idx:7.20},
+  {id:4052,lat:40.3940,lng:-3.6690,acc:116,loc:'C/ Méndez Álvaro · Autovía M',prob:0.044,entorno:'Nada',idx:7.10},
+];
+
+// Top 5 combinaciones más peligrosas (Figura 47 del TFM - intersección + despejado + noche)
+const paradoxZones = [
+  {lat:40.4390,lng:-3.7210,acc:25,prob:0.391,entorno:'Intersección',franja:'Noche',carriles:1,loc:'Alta prob. · intersec. 1 carril · nocturna',idx:16.80},
+  {lat:40.4190,lng:-3.7250,acc:40,prob:0.155,entorno:'Intersección',franja:'Noche',carriles:0,loc:'Intersección nocturna · zona oeste',idx:12.54},
+  {lat:40.4050,lng:-3.7380,acc:33,prob:0.155,entorno:'Intersección',franja:'Noche',carriles:2,loc:'Carabanchel · baja intensidad',idx:5.63},
+  {lat:40.4620,lng:-3.6740,acc:25,prob:0.105,entorno:'Intersección',franja:'Salida/noche',carriles:2,loc:'Hortaleza · salida laboral',idx:4.79},
+  {lat:40.4280,lng:-3.6960,acc:21,prob:0.086,entorno:'Intersección',franja:'Mañana',carriles:0,loc:'Ciudad Lineal · punta mañana',idx:4.21},
+];
+
+// Zonas seguras (paradoja inversa: alta intensidad, baja siniestralidad)
+const safeZones = [
+  {lat:40.4490,lng:-3.6920,acc:8,loc:'Av. Burgos · alta intensidad controlada',prob:0.003},
+  {lat:40.4150,lng:-3.6820,acc:12,loc:'A-2 acceso · bien gestionado',prob:0.004},
+  {lat:40.4580,lng:-3.7200,acc:10,loc:'Nudo Manoteras · señalización óptima',prob:0.003},
+];
+
+const franjaFactors = {
+  manana:{factor:1.2,label:'Mañana 06–12h'},
+  tarde:{factor:1.0,label:'Almuerzo/tarde 12–17h'},
+  salida:{factor:1.5,label:'Salida/noche 17–00h'},
+  noche:{factor:0.65,label:'Madrugada 00–06h'}
+};
+
+let currentFranja = 'manana';
+
+function buildHeatData(franja) {
+  const f = franjaFactors[franja].factor;
+  const pts = [];
+  topClusters.forEach(c => {
+    pts.push([c.lat, c.lng, Math.min(1, c.prob * f * 10)]);
+    for (let i=0;i<10;i++) pts.push([c.lat+(Math.random()-.5)*0.03,c.lng+(Math.random()-.5)*0.03,Math.min(1,c.prob*f*7*Math.random())]);
+  });
+  paradoxZones.forEach(z => pts.push([z.lat,z.lng,Math.min(1,z.prob*f*2.5)]));
+  // M-30 corredor real
+  [[40.396,-3.700],[40.402,-3.688],[40.410,-3.682],[40.420,-3.680],[40.430,-3.685],[40.438,-3.695],[40.442,-3.710],[40.438,-3.725],[40.428,-3.738],[40.410,-3.738],[40.397,-3.727]].forEach(p=>pts.push([p[0],p[1],0.5*f]));
+  return pts;
+}
+
+const map = L.map('map',{center:[40.4168,-3.7038],zoom:13,zoomControl:true});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+
+let heatLayer=null;
+const clusterLayer=L.layerGroup();
+const paradoxLayer=L.layerGroup();
+const safeLayer=L.layerGroup();
+const layerState={heat:{active:true},clusters:{active:true,layer:clusterLayer},paradox:{active:true,layer:paradoxLayer},safe:{active:false,layer:safeLayer}};
+
+function buildMarkers() {
+  clusterLayer.clearLayers(); paradoxLayer.clearLayers(); safeLayer.clearLayers();
+  const fl = franjaFactors[currentFranja].label;
+  const ff = franjaFactors[currentFranja].factor;
+
+  topClusters.forEach(c=>{
+    const prob = Math.min(0.99, c.prob*ff);
+    const size = 5+Math.sqrt(c.acc)*0.45;
+    const circle = L.circleMarker([c.lat,c.lng],{radius:size,color:'#ef4444',weight:2,opacity:0.9,fillOpacity:0.3,fillColor:'#ef4444'});
+    circle.on('click',()=>showInfo(`Cluster ${c.id}`,c.acc,(prob*100).toFixed(1)+'%',c.entorno,fl,c.idx.toFixed(2),c.loc));
+    clusterLayer.addLayer(circle);
+  });
+
+  paradoxZones.forEach((z,i)=>{
+    const circle = L.circleMarker([z.lat,z.lng],{radius:7,color:'#f59e0b',weight:2,opacity:0.9,fillOpacity:0.4,fillColor:'#f59e0b'});
+    circle.on('click',()=>showInfo(`Top riesgo #${i+1}`,z.acc,(z.prob*100).toFixed(1)+'%',z.entorno,z.franja,z.idx.toFixed(2),z.loc));
+    paradoxLayer.addLayer(circle);
+  });
+
+  safeZones.forEach(z=>{
+    const circle = L.circleMarker([z.lat,z.lng],{radius:6,color:'#22c55e',weight:2,opacity:0.8,fillOpacity:0.25,fillColor:'#22c55e'});
+    circle.on('click',()=>showInfo('Zona segura',z.acc,(z.prob*100).toFixed(1)+'%','Alta intensidad',fl,'—',z.loc));
+    safeLayer.addLayer(circle);
+  });
+}
+
+function buildHeat() {
+  if(heatLayer) map.removeLayer(heatLayer);
+  heatLayer=L.heatLayer(buildHeatData(currentFranja),{radius:30,blur:24,maxZoom:16,gradient:{0.2:'#22c55e',0.5:'#eab308',0.75:'#ef4444',1.0:'#7f1d1d'}});
+  if(layerState.heat.active) heatLayer.addTo(map);
+}
+
+function init(){buildMarkers();buildHeat();if(layerState.clusters.active)clusterLayer.addTo(map);if(layerState.paradox.active)paradoxLayer.addTo(map);if(layerState.safe.active)safeLayer.addTo(map);}
+init();
+
+function toggleLayer(name){
+  const s=layerState[name]; s.active=!s.active;
+  document.getElementById('toggle-'+name).classList.toggle('active',s.active);
+  if(name==='heat'){if(s.active)heatLayer.addTo(map);else map.removeLayer(heatLayer);}
+  else{if(s.active)s.layer.addTo(map);else map.removeLayer(s.layer);}
+}
+
+function setFranja(f){
+  currentFranja=f;
+  document.querySelectorAll('.franja-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('franja-'+f).classList.add('active');
+  buildMarkers(); buildHeat();
+  Object.keys(layerState).forEach(k=>{if(k!=='heat'&&layerState[k].active)layerState[k].layer.addTo(map);});
+}
+
+function showInfo(title,acc,prob,entorno,franja,idx,loc){
+  document.getElementById('point-info').classList.add('visible');
+  document.getElementById('no-point').style.display='none';
+  document.getElementById('pt-title').textContent=title;
+  document.getElementById('pt-acc').textContent=acc;
+  document.getElementById('pt-prob').textContent=prob;
+  document.getElementById('pt-entorno').textContent=entorno;
+  document.getElementById('pt-franja').textContent=franja;
+  document.getElementById('pt-idx').textContent=idx;
+  document.getElementById('pt-loc').textContent=loc;
+}
+
+// Top calles (Cuadro 6 del TFM)
+[{lat:40.4193,lng:-3.7040,name:'C/ Gran Vía',acc:390},{lat:40.4400,lng:-3.6890,name:'Paseo Castellana',acc:971},{lat:40.4230,lng:-3.6640,name:'C/ Alcalá',acc:1122},{lat:40.3985,lng:-3.6720,name:'Méndez Álvaro / M-30',acc:500},{lat:40.4530,lng:-3.6770,name:'Av. América',acc:300},{lat:40.4168,lng:-3.7038,name:'C/ Bravo Murillo',acc:400}].forEach(s=>{
+  L.circleMarker([s.lat,s.lng],{radius:3,color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:1,weight:0}).bindTooltip(`<b>${s.name}</b><br>${s.acc} accidentes (2022–2024)`,{permanent:false,direction:'top',className:'custom-tooltip'}).addTo(map);
+});
+</script>
+</body>
+</html>
