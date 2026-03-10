@@ -3,692 +3,892 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Data Engineering Pipeline Flow</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=Cabinet+Grotesk:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<title>DE Pipeline · Luis Gonzalez · SDG Group</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #060910;
-  --surface: #0c1018;
-  --surface2: #111622;
-  --surface3: #181f2e;
-  --border: rgba(99,179,237,0.1);
-  --border2: rgba(99,179,237,0.22);
-  --text: #d4dff0;
-  --muted: #4a5a72;
-  --bright: #e8f1ff;
+  --bg:    #04050a;
+  --ink:   #07080f;
+  --panel: #0b0d18;
+  --gold:  #c9a84c;
+  --gold2: #e8c97a;
+  --gold3: #f5e6b8;
+  --dim:   rgba(201,168,76,0.10);
+  --dim2:  rgba(201,168,76,0.20);
+  --text:  #8a94b0;
+  --bright:#eef0f8;
+  --muted: #2e3248;
+  --muted2:#565a78;
+  --green: #00d97e;
+  --blue:  #4ab8f0;
+  --red:   #f06060;
+  --amber: #f0a030;
 
-  /* Tool colors */
-  --dc:   #4ade80;   /* DataCoves — green */
-  --bb:   #2684ff;   /* Bitbucket — blue */
-  --jk:   #e8483a;   /* Jenkins — red */
-  --sf:   #29b5e8;   /* Snowflake — cyan */
-  --dbt:  #f97316;   /* dbt — orange */
-  --git:  #a78bfa;   /* Git — purple */
+  /* Tool accent colors */
+  --dc:  #4ade80;
+  --bb:  #2684ff;
+  --jk:  #e8483a;
+  --sf:  #29b5e8;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Cabinet Grotesk', sans-serif;
-  min-height: 100vh;
+  font-family: 'JetBrains Mono', monospace;
   overflow-x: hidden;
 }
 
-/* Grid background */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(99,179,237,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,179,237,0.025) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+/* ── PIPE CANVAS ── */
+#bgCanvas {
+  position:fixed; inset:0; z-index:0;
+  pointer-events:none; opacity:0.45;
 }
 
-/* Ambient glow */
-body::after {
-  content: '';
-  position: fixed;
-  top: -200px; left: 50%; transform: translateX(-50%);
-  width: 900px; height: 500px;
-  background: radial-gradient(ellipse, rgba(41,181,232,0.05) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
+/* ── NAV ── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  padding:18px 52px;
+  display:flex; align-items:center; justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(4,5,10,0.97),transparent);
+  transition:background 0.4s;
 }
+nav.solid { background:rgba(4,5,10,0.98); border-bottom:1px solid rgba(201,168,76,0.08); }
+.nav-logo { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--bright); letter-spacing:0.12em; }
+.nav-logo span { color:var(--gold); }
+.nav-right { display:flex; align-items:center; gap:20px; }
+.nav-tag { font-size:8px; letter-spacing:0.25em; color:var(--muted2); text-transform:uppercase; }
+.nav-back {
+  font-size:9px; letter-spacing:0.2em; text-transform:uppercase;
+  border:1px solid var(--dim2); padding:7px 16px;
+  color:var(--gold); text-decoration:none; transition:all 0.2s;
+}
+.nav-back:hover { background:var(--dim); border-color:var(--gold); }
 
-/* ── HEADER ── */
-header {
-  position: relative; z-index: 10;
-  padding: 28px 48px 24px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: flex-end; justify-content: space-between;
-  background: rgba(6,9,16,0.8); backdrop-filter: blur(12px);
+/* ── HERO ── */
+#hero {
+  min-height:100vh; display:flex; flex-direction:column;
+  justify-content:center; padding:0 52px; overflow:hidden; position:relative; z-index:1;
 }
-.header-left {}
-.header-eyebrow {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; letter-spacing: 0.3em;
-  color: var(--sf); text-transform: uppercase; margin-bottom: 6px;
+.hero-bg {
+  position:absolute; right:-60px; top:50%; transform:translateY(-50%);
+  font-family:'Bebas Neue',sans-serif; font-size:clamp(180px,20vw,300px);
+  color:rgba(201,168,76,0.025); line-height:1; pointer-events:none; user-select:none;
+  letter-spacing:-0.02em; white-space:nowrap;
 }
-.header-title {
-  font-size: 22px; font-weight: 900; color: var(--bright);
-  letter-spacing: -0.02em; line-height: 1.1;
+.hero-eyebrow {
+  display:flex; align-items:center; gap:14px;
+  font-size:9px; letter-spacing:0.4em; color:var(--gold); text-transform:uppercase;
+  margin-bottom:20px; opacity:0; animation:fadeUp 0.8s 0.2s ease forwards;
 }
-.header-title span { color: var(--sf); }
-.header-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 5px; }
-.header-right { display: flex; gap: 10px; align-items: center; }
-.env-badge {
-  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
-  letter-spacing: 0.15em; padding: 5px 12px;
-  border: 1px solid; text-transform: uppercase;
+.hero-eyebrow::before { content:''; width:28px; height:1px; background:var(--gold); }
+.hero-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(60px,9vw,128px); color:var(--bright);
+  line-height:0.88; letter-spacing:0.02em; margin-bottom:20px;
+  opacity:0; animation:fadeUp 0.9s 0.4s ease forwards;
 }
-.env-dev { border-color: rgba(74,222,128,0.4); color: var(--dc); background: rgba(74,222,128,0.06); }
-.env-prod { border-color: rgba(41,181,232,0.4); color: var(--sf); background: rgba(41,181,232,0.06); }
+.hero-title span { color:var(--gold); }
+.hero-sub {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:clamp(16px,2vw,22px); color:var(--muted2); margin-bottom:40px;
+  opacity:0; animation:fadeUp 0.9s 0.6s ease forwards;
+}
+.hero-desc {
+  max-width:520px; font-size:11px; line-height:1.9; color:var(--text);
+  border-left:1px solid var(--dim2); padding-left:20px; margin-bottom:52px;
+  opacity:0; animation:fadeUp 0.9s 0.8s ease forwards;
+}
+.hero-desc em { color:var(--gold2); font-style:normal; }
 
-/* ── MAIN LAYOUT ── */
-main {
-  position: relative; z-index: 1;
-  padding: 40px 48px 60px;
-  max-width: 1400px; margin: 0 auto;
+/* Pipeline mini-diagram in hero */
+.hero-pipeline {
+  display:flex; align-items:center; gap:0;
+  opacity:0; animation:fadeUp 0.9s 1.0s ease forwards;
+  margin-bottom:48px;
 }
+.hp-stage {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:0 24px; cursor:pointer; transition:transform 0.2s;
+}
+.hp-stage:hover { transform:translateY(-4px); }
+.hp-node {
+  width:48px; height:48px; border:1px solid;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; position:relative; transition:box-shadow 0.3s;
+}
+.hp-node::after {
+  content:''; position:absolute; inset:-4px;
+  border:1px solid; opacity:0; transition:opacity 0.3s;
+}
+.hp-stage:hover .hp-node { box-shadow:0 0 24px; }
+.hp-stage:hover .hp-node::after { opacity:0.3; }
+.hp-label { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; }
+.hp-dur { font-size:7px; color:var(--muted2); }
 
-/* Section label */
-.phase-label {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 20px;
-  display: flex; align-items: center; gap: 12px;
+.hp-arrow {
+  color:var(--muted); font-size:14px; padding:0 4px;
+  animation:arrowPulse 2s ease infinite;
 }
-.phase-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.phase-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 1px solid var(--border2); font-size: 10px; color: var(--sf); flex-shrink: 0;
-}
+@keyframes arrowPulse { 0%,100%{opacity:0.3;transform:translateX(0)} 50%{opacity:1;transform:translateX(3px)} }
 
-/* ── PIPELINE ROW ── */
-.pipeline {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
-  position: relative;
-  margin-bottom: 48px;
-}
+.hp-dc { border-color:rgba(74,222,128,0.4); color:var(--dc); }
+.hp-dc::after { border-color:var(--dc); }
+.hp-dc:hover .hp-node { box-shadow:0 0 24px rgba(74,222,128,0.3); }
+.hp-bb { border-color:rgba(38,132,255,0.4); color:var(--bb); }
+.hp-bb:hover .hp-node { box-shadow:0 0 24px rgba(38,132,255,0.3); }
+.hp-jk { border-color:rgba(232,72,58,0.4); color:var(--jk); }
+.hp-jk:hover .hp-node { box-shadow:0 0 24px rgba(232,72,58,0.3); }
+.hp-sf { border-color:rgba(41,181,232,0.4); color:var(--sf); }
+.hp-sf:hover .hp-node { box-shadow:0 0 24px rgba(41,181,232,0.3); }
 
-/* Connector line */
-.pipeline::before {
-  content: '';
-  position: absolute;
-  top: 68px; left: 12.5%; right: 12.5%;
-  height: 2px;
-  background: linear-gradient(90deg,
-    var(--dc) 0%, var(--dc) 25%,
-    var(--bb) 25%, var(--bb) 50%,
-    var(--jk) 50%, var(--jk) 75%,
-    var(--sf) 75%, var(--sf) 100%
-  );
-  opacity: 0.35; z-index: 0;
+.hero-stats {
+  display:flex; gap:40px;
+  opacity:0; animation:fadeUp 0.9s 1.2s ease forwards;
 }
+.hstat { display:flex; flex-direction:column; gap:2px; }
+.hstat-n { font-family:'Bebas Neue',sans-serif; font-size:40px; color:var(--gold); line-height:1; }
+.hstat-l { font-size:8px; letter-spacing:0.2em; color:var(--muted2); text-transform:uppercase; }
 
-/* ── NODE CARD ── */
-.node {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 0 12px; position: relative; z-index: 1;
-  cursor: pointer;
+/* ── SECTION CHROME ── */
+.sec-divider {
+  position:relative; z-index:1;
+  padding:0 52px; display:flex; align-items:center; gap:16px;
 }
+.sd-n { font-size:9px; color:var(--gold); letter-spacing:0.2em; }
+.sd-line { flex:1; height:1px; background:linear-gradient(to right,var(--dim2),transparent); }
+.sd-lbl { font-size:8px; letter-spacing:0.35em; color:var(--muted); text-transform:uppercase; }
 
-.node-icon-wrap {
-  width: 68px; height: 68px; border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid; margin-bottom: 14px;
-  transition: transform 0.25s, box-shadow 0.25s;
-  position: relative;
+.sec-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(48px,6vw,80px); color:var(--bright);
+  letter-spacing:0.04em; line-height:0.9;
 }
-.node:hover .node-icon-wrap {
-  transform: translateY(-4px);
-}
+.sec-title span { color:var(--gold); }
 
-.node-icon-wrap .node-num {
-  position: absolute; top: -8px; right: -8px;
-  width: 18px; height: 18px; border-radius: 50%;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--bg);
-}
+/* ── TOOLS SECTION ── */
+#tools { padding:100px 52px; position:relative; z-index:1; }
+.tools-header { margin-bottom:64px; }
+.tools-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; }
 
-/* Per-tool colors */
-.node-dc .node-icon-wrap  { border-color: var(--dc);  background: rgba(74,222,128,0.08);  box-shadow: 0 0 20px rgba(74,222,128,0.1); }
-.node-dc:hover .node-icon-wrap { box-shadow: 0 8px 30px rgba(74,222,128,0.25); }
-.node-dc  .node-num       { background: var(--dc);  color: #000; }
+.tool-card {
+  background:var(--ink); border:1px solid rgba(255,255,255,0.04);
+  padding:48px 44px; position:relative; overflow:hidden;
+  transition:background 0.4s; cursor:default;
+}
+.tool-card:hover { background:#0d0f1e; }
+.tool-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  transform:scaleX(0); transform-origin:left; transition:transform 0.5s ease;
+}
+.tool-card:hover::before { transform:scaleX(1); }
+.tool-card.tc-dc::before { background:var(--dc); }
+.tool-card.tc-bb::before { background:var(--bb); }
+.tool-card.tc-jk::before { background:var(--jk); }
+.tool-card.tc-sf::before { background:var(--sf); }
 
-.node-bb .node-icon-wrap  { border-color: var(--bb);  background: rgba(38,132,255,0.08);  box-shadow: 0 0 20px rgba(38,132,255,0.1); }
-.node-bb:hover .node-icon-wrap { box-shadow: 0 8px 30px rgba(38,132,255,0.25); }
-.node-bb  .node-num       { background: var(--bb);  color: #fff; }
+.tc-bg-num {
+  position:absolute; right:24px; top:12px;
+  font-family:'Bebas Neue',sans-serif; font-size:120px;
+  line-height:1; pointer-events:none; user-select:none; opacity:0.04;
+}
+.tool-card.tc-dc .tc-bg-num { color:var(--dc); }
+.tool-card.tc-bb .tc-bg-num { color:var(--bb); }
+.tool-card.tc-jk .tc-bg-num { color:var(--jk); }
+.tool-card.tc-sf .tc-bg-num { color:var(--sf); }
 
-.node-jk .node-icon-wrap  { border-color: var(--jk);  background: rgba(232,72,58,0.08);   box-shadow: 0 0 20px rgba(232,72,58,0.1); }
-.node-jk:hover .node-icon-wrap { box-shadow: 0 8px 30px rgba(232,72,58,0.3); }
-.node-jk  .node-num       { background: var(--jk);  color: #fff; }
+.tc-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; }
+.tc-icon { font-size:32px; }
+.tc-badge {
+  font-size:7px; letter-spacing:0.25em; text-transform:uppercase;
+  border:1px solid; padding:3px 10px;
+}
+.tool-card.tc-dc .tc-badge { border-color:rgba(74,222,128,0.35); color:var(--dc); }
+.tool-card.tc-bb .tc-badge { border-color:rgba(38,132,255,0.35); color:var(--bb); }
+.tool-card.tc-jk .tc-badge { border-color:rgba(232,72,58,0.35); color:var(--jk); }
+.tool-card.tc-sf .tc-badge { border-color:rgba(41,181,232,0.35); color:var(--sf); }
 
-.node-sf .node-icon-wrap  { border-color: var(--sf);  background: rgba(41,181,232,0.08);  box-shadow: 0 0 20px rgba(41,181,232,0.1); }
-.node-sf:hover .node-icon-wrap { box-shadow: 0 8px 30px rgba(41,181,232,0.3); }
-.node-sf  .node-num       { background: var(--sf);  color: #000; }
+.tc-name { font-family:'Bebas Neue',sans-serif; font-size:44px; color:var(--bright); letter-spacing:0.04em; line-height:1; margin-bottom:6px; }
+.tc-role {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:14px; color:var(--muted2); margin-bottom:24px;
+}
+.tc-steps { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.tc-steps li {
+  font-size:10px; color:var(--text); line-height:1.6;
+  padding-left:16px; position:relative;
+}
+.tc-steps li::before { content:'▸'; position:absolute; left:0; font-size:9px; }
+.tool-card.tc-dc .tc-steps li::before { color:var(--dc); }
+.tool-card.tc-bb .tc-steps li::before { color:var(--bb); }
+.tool-card.tc-jk .tc-steps li::before { color:var(--jk); }
+.tool-card.tc-sf .tc-steps li::before { color:var(--sf); }
 
-.node-icon-wrap svg { width: 32px; height: 32px; }
+/* ── PIPELINE STAGES ── */
+#stages { padding:100px 52px; position:relative; z-index:1; }
+.stages-header { margin-bottom:64px; }
 
-.node-name {
-  font-size: 15px; font-weight: 800; color: var(--bright);
-  margin-bottom: 4px; text-align: center; letter-spacing: -0.01em;
-}
-.node-role {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px; color: var(--muted); text-align: center;
-  text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px;
-}
-
-/* Step list */
-.node-steps {
-  width: 100%; background: var(--surface2);
-  border: 1px solid var(--border); padding: 12px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.step {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 7px 8px;
-  border-left: 2px solid transparent;
-  transition: background 0.2s, border-color 0.2s;
-  cursor: pointer;
-}
-.step:hover { background: rgba(255,255,255,0.04); }
-.step.active { border-left-color: var(--sf); background: rgba(41,181,232,0.05); }
-
-.step-dot {
-  width: 5px; height: 5px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
-}
-.node-dc .step-dot  { background: var(--dc); }
-.node-bb .step-dot  { background: var(--bb); }
-.node-jk .step-dot  { background: var(--jk); }
-.node-sf .step-dot  { background: var(--sf); }
-
-.step-text { font-size: 11px; color: var(--text); line-height: 1.4; }
-.step-tag {
-  margin-top: 3px; display: inline-block;
-  font-family: 'IBM Plex Mono', monospace; font-size: 8px;
-  padding: 1px 5px; border-radius: 2px; opacity: 0.8;
-}
-
-/* ── ARROW AREA ── */
-.arrows {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  padding: 0 12.5%; margin-bottom: 48px;
-  gap: 0;
-}
-.arrow-block {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 8px; padding: 0 20px;
-}
-.arrow-line {
-  display: flex; align-items: center; justify-content: center;
-  gap: 8px; width: 100%;
-}
-.arrow-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.arrow-dash { flex: 1; border-top: 1.5px dashed; opacity: 0.3; }
-.arrow-chevron { font-size: 12px; opacity: 0.6; }
-.arrow-label {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8px; color: var(--muted); text-align: center;
-  text-transform: uppercase; letter-spacing: 0.1em;
-}
-.arrow-trigger {
-  font-size: 9px; color: var(--muted); text-align: center;
-  background: var(--surface2); border: 1px solid var(--border);
-  padding: 3px 8px; width: 100%; max-width: 160px;
-  font-family: 'IBM Plex Mono', monospace;
-}
-
-/* ── BOTTOM SECTION: CI/CD STAGES ── */
-.cicd-section { margin-bottom: 48px; }
+.stage-list { display:flex; flex-direction:column; gap:2px; }
 
 .stage-row {
-  display: flex; gap: 8px; align-items: stretch;
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 16px; margin-bottom: 8px;
-  transition: border-color 0.2s;
+  display:grid; grid-template-columns:64px 1fr auto;
+  align-items:stretch; background:var(--ink);
+  border:1px solid rgba(255,255,255,0.04);
+  overflow:hidden; transition:all 0.3s; cursor:pointer;
 }
-.stage-row:hover { border-color: var(--border2); }
+.stage-row:hover { background:#0d0f1e; border-color:rgba(255,255,255,0.08); }
+.stage-row.open { background:#0d0f1e; }
+.stage-row.open .stage-expand-icon { transform:rotate(90deg); }
 
-.stage-num {
-  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700;
-  width: 28px; flex-shrink: 0; color: var(--muted); padding-top: 2px;
+.stage-num-col {
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--muted);
+  border-right:1px solid rgba(255,255,255,0.04);
+  transition:color 0.3s;
 }
-.stage-content { flex: 1; }
-.stage-name { font-size: 13px; font-weight: 700; color: var(--bright); margin-bottom: 4px; }
-.stage-desc { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
-.stage-pills { display: flex; flex-wrap: wrap; gap: 5px; }
-.pill {
-  font-family: 'IBM Plex Mono', monospace; font-size: 8px;
-  padding: 2px 8px; border: 1px solid; border-radius: 2px;
-  text-transform: uppercase; letter-spacing: 0.08em;
-}
-.pill-dc  { border-color: rgba(74,222,128,0.4);  color: var(--dc); }
-.pill-bb  { border-color: rgba(38,132,255,0.4);  color: var(--bb); }
-.pill-jk  { border-color: rgba(232,72,58,0.4);   color: var(--jk); }
-.pill-sf  { border-color: rgba(41,181,232,0.4);  color: var(--sf); }
-.pill-dbt { border-color: rgba(249,115,22,0.4);  color: var(--dbt); }
-.pill-git { border-color: rgba(167,139,250,0.4); color: var(--git); }
+.stage-row:hover .stage-num-col,
+.stage-row.open .stage-num-col { color:var(--gold); }
 
-.stage-status {
-  display: flex; align-items: center; gap: 6px;
-  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
-  flex-shrink: 0; align-self: flex-start; padding-top: 2px;
+.stage-main { padding:28px 32px; }
+.stage-top { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
+.stage-name {
+  font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--bright);
+  letter-spacing:0.04em;
 }
-.status-pass { color: var(--dc); }
-.status-auto { color: var(--jk); }
-.status-gate { color: var(--sf); }
+.stage-pills { display:flex; gap:6px; flex-wrap:wrap; }
+.sp { font-size:7px; letter-spacing:0.15em; text-transform:uppercase; padding:2px 8px; border:1px solid; }
+.sp-dc  { border-color:rgba(74,222,128,0.3);  color:var(--dc); }
+.sp-bb  { border-color:rgba(38,132,255,0.3);  color:var(--bb); }
+.sp-jk  { border-color:rgba(232,72,58,0.3);   color:var(--jk); }
+.sp-sf  { border-color:rgba(41,181,232,0.3);  color:var(--sf); }
+.sp-dbt { border-color:rgba(249,115,22,0.3);  color:#f97316; }
+.sp-git { border-color:rgba(160,160,160,0.25);color:var(--muted2); }
 
-/* ── LEGEND ── */
-.legend {
-  display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
-  padding: 16px 20px; border: 1px solid var(--border);
-  background: var(--surface);
-}
-.legend-item { display: flex; align-items: center; gap: 7px; }
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-.legend-text { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+.stage-desc { font-size:10px; color:var(--muted2); line-height:1.7; }
 
-/* Animated pulse */
-@keyframes glow-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+/* Expandable log */
+.stage-log {
+  max-height:0; overflow:hidden; transition:max-height 0.5s ease;
+  border-top:0px solid rgba(255,255,255,0.04);
 }
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--dc); animation: glow-pulse 2s ease infinite;
-  display: inline-block; margin-right: 5px;
+.stage-row.open .stage-log {
+  max-height:240px;
+  border-top:1px solid rgba(255,255,255,0.04);
 }
+.log-inner { padding:20px 32px; background:var(--bg); }
+.log-line {
+  font-size:9px; line-height:1.8; color:var(--muted2);
+  display:flex; gap:12px;
+}
+.log-time { color:var(--muted); flex-shrink:0; }
+.log-ok { color:var(--green); }
+.log-warn { color:var(--amber); }
+.log-run { color:var(--blue); }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .pipeline { grid-template-columns: 1fr 1fr; }
-  .arrows { display: none; }
-  main { padding: 24px; }
-  header { padding: 20px 24px; flex-direction: column; align-items: flex-start; gap: 12px; }
+.stage-meta {
+  padding:28px 32px; border-left:1px solid rgba(255,255,255,0.04);
+  display:flex; flex-direction:column; align-items:flex-end; justify-content:center;
+  gap:8px; min-width:120px;
 }
+.stage-time {
+  font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--gold); line-height:1;
+}
+.stage-status { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; }
+.stage-status.pass { color:var(--green); }
+.stage-status.auto { color:var(--blue); }
+.stage-status.gate { color:var(--amber); }
+.stage-expand-icon { font-size:10px; color:var(--muted2); transition:transform 0.3s; }
 
-/* Fade in */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: none; }
+/* ── METRICS ── */
+#metrics { padding:100px 52px; position:relative; z-index:1; }
+.metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; margin-top:52px; }
+.metric-card {
+  background:var(--ink); border:1px solid rgba(255,255,255,0.04);
+  padding:36px 28px; position:relative; overflow:hidden;
+  transition:all 0.3s;
 }
-.node { animation: fadeUp 0.5s ease both; }
-.node:nth-child(1) { animation-delay: 0.05s; }
-.node:nth-child(2) { animation-delay: 0.15s; }
-.node:nth-child(3) { animation-delay: 0.25s; }
-.node:nth-child(4) { animation-delay: 0.35s; }
-.stage-row { animation: fadeUp 0.5s ease both; }
-.stage-row:nth-child(2) { animation-delay: 0.1s; }
-.stage-row:nth-child(3) { animation-delay: 0.2s; }
-.stage-row:nth-child(4) { animation-delay: 0.3s; }
-.stage-row:nth-child(5) { animation-delay: 0.4s; }
-.stage-row:nth-child(6) { animation-delay: 0.5s; }
+.metric-card:hover { background:#0d0f1e; transform:translateY(-3px); }
+.metric-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+  background:var(--gold); transform:scaleX(0); transform-origin:left; transition:transform 0.4s;
+}
+.metric-card:hover::after { transform:scaleX(1); }
+.mc-label { font-size:8px; letter-spacing:0.3em; color:var(--muted2); text-transform:uppercase; margin-bottom:16px; }
+.mc-val {
+  font-family:'Bebas Neue',sans-serif; font-size:52px; line-height:1; margin-bottom:8px;
+}
+.mc-sub { font-size:9px; color:var(--muted2); line-height:1.5; }
+.mc-bar-wrap { height:2px; background:var(--muted); margin-top:16px; overflow:hidden; }
+.mc-bar { height:100%; transition:width 1.4s ease; }
+
+/* ── FLOW CANVAS SECTION ── */
+#flowsec { padding:100px 52px; position:relative; z-index:1; }
+.flow-canvas-wrap {
+  margin-top:52px; background:var(--ink);
+  border:1px solid rgba(255,255,255,0.04);
+  overflow:hidden; position:relative;
+}
+#flowCanvas { display:block; width:100%; height:340px; }
+.flow-legend {
+  position:absolute; bottom:16px; left:20px;
+  display:flex; gap:20px;
+}
+.fl-item { display:flex; align-items:center; gap:7px; font-size:8px; color:var(--muted2); letter-spacing:0.1em; }
+.fl-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* ── REVEAL ── */
+.reveal { opacity:0; transform:translateY(24px); transition:opacity 0.8s ease,transform 0.8s ease; }
+.reveal.visible { opacity:1; transform:none; }
+
+/* ── FOOTER ── */
+footer {
+  position:relative; z-index:1;
+  padding:24px 52px; border-top:1px solid rgba(255,255,255,0.04);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.footer-l { font-size:9px; color:var(--muted); letter-spacing:0.15em; }
+.footer-cursor { display:inline-block; width:7px; height:12px; background:var(--gold); animation:blink 1.2s step-end infinite; vertical-align:middle; margin-left:3px; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+.footer-r { display:flex; gap:20px; }
+.footer-r a { font-size:9px; color:var(--muted2); letter-spacing:0.15em; text-decoration:none; transition:color 0.2s; }
+.footer-r a:hover { color:var(--gold); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp   { from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none} }
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  nav,#hero,#tools,#stages,#metrics,#flowsec,footer { padding-left:24px;padding-right:24px; }
+  .tools-grid,.metrics-grid { grid-template-columns:1fr; }
+  .hero-pipeline { flex-wrap:wrap; }
+  .hero-bg,.tc-bg-num { display:none; }
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-  <div class="header-left">
-    <div class="header-eyebrow">Data Engineering · CI/CD Pipeline</div>
-    <div class="header-title">End-to-end <span>Data Pipeline</span> Flow</div>
-    <div class="header-sub">// develop → commit → validate → deploy → warehouse</div>
+<canvas id="bgCanvas"></canvas>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-logo">LG<span>.</span>PIPELINE</div>
+  <div class="nav-right">
+    <div class="nav-tag">SDG Group · CI/CD · datacoves_integrated_data</div>
+    <a class="nav-back" href="cv_luis_gonzalez.html" target="_blank">← Portfolio</a>
   </div>
-  <div class="header-right">
-    <a href="index.html" target="_blank" style="font-family:'IBM Plex Mono',monospace;font-size:9px;border:1px solid rgba(41,181,232,0.35);padding:5px 12px;color:#29b5e8;background:rgba(41,181,232,0.06);text-decoration:none;letter-spacing:0.1em;transition:all 0.2s;" onmouseover="this.style.background='rgba(41,181,232,0.12)'" onmouseout="this.style.background='rgba(41,181,232,0.06)'">← CV</a>
-    <div class="env-badge env-dev">Dev environment</div>
-    <div class="env-badge env-prod">→ Production</div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg">DE</div>
+  <div class="hero-eyebrow">Data Engineering · CI/CD · Production Pipeline</div>
+  <div class="hero-title">END<span>·</span>TO<span>·</span><br>END<span>.</span></div>
+  <div class="hero-sub">From development to production — in 35 minutes</div>
+  <div class="hero-desc">
+    Pipeline de datos productivo con <em>5 etapas CI/CD automáticas</em>.
+    Desde el desarrollo de modelos dbt en DataCoves hasta el deploy completo
+    en Snowflake, pasando por validación automática en Jenkins y control
+    de versiones con Bitbucket. <em>Cero intervención manual en producción</em>.
   </div>
-</header>
 
-<main>
-
-  <!-- PHASE 1: TOOL NODES -->
-  <div class="phase-label">
-    <span class="phase-num">1</span>
-    Herramientas del stack
-  </div>
-
-  <div class="pipeline">
-
-    <!-- DataCoves -->
-    <div class="node node-dc" onclick="highlight(this)">
-      <div class="node-icon-wrap">
-        <div class="node-num">1</div>
-        <!-- DataCoves icon: DC initials stylized -->
-        <svg viewBox="0 0 32 32" fill="none">
-          <rect x="3" y="8" width="26" height="16" rx="3" stroke="#4ade80" stroke-width="1.8"/>
-          <path d="M8 16 L14 11 L14 21 Z" fill="#4ade80" opacity="0.9"/>
-          <rect x="17" y="11" width="8" height="2" rx="1" fill="#4ade80" opacity="0.7"/>
-          <rect x="17" y="15" width="5" height="2" rx="1" fill="#4ade80" opacity="0.5"/>
-          <rect x="17" y="19" width="6" height="2" rx="1" fill="#4ade80" opacity="0.3"/>
-        </svg>
-      </div>
-      <div class="node-name">DataCoves</div>
-      <div class="node-role">IDE / Development</div>
-      <div class="node-steps">
-        <div class="step active">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Entorno de desarrollo dbt + SQL</div>
-            <span class="step-tag" style="background:rgba(74,222,128,0.1);color:#4ade80">dbt models</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Workspace con VS Code integrado</div>
-            <span class="step-tag" style="background:rgba(74,222,128,0.1);color:#4ade80">YAML · SQL</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Preview en Snowflake dev schema</div>
-            <span class="step-tag" style="background:rgba(74,222,128,0.1);color:#4ade80">dbt run --select</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Tests locales antes de commit</div>
-            <span class="step-tag" style="background:rgba(74,222,128,0.1);color:#4ade80">dbt test</span>
-          </div>
-        </div>
-      </div>
+  <!-- Mini pipeline diagram -->
+  <div class="hero-pipeline">
+    <div class="hp-stage" onclick="scrollTo(0,document.getElementById('tools').offsetTop-60)">
+      <div class="hp-node hp-dc" style="border-color:rgba(74,222,128,0.4);color:var(--dc)">🖥</div>
+      <div class="hp-label" style="color:var(--dc)">DataCoves</div>
+      <div class="hp-dur">IDE · dbt</div>
     </div>
-
-    <!-- Bitbucket -->
-    <div class="node node-bb" onclick="highlight(this)">
-      <div class="node-icon-wrap">
-        <div class="node-num">2</div>
-        <svg viewBox="0 0 32 32" fill="none">
-          <path d="M4 8.5C3.7 8.5 3.45 8.75 3.5 9.05L6.3 23.4C6.4 23.95 6.9 24.35 7.45 24.35H24.6C25 24.35 25.35 24.05 25.4 23.65L28.5 9.05C28.55 8.75 28.3 8.5 28 8.5H4Z" stroke="#2684ff" stroke-width="1.6"/>
-          <path d="M16 12.5L13.5 19.5H18.5L16 12.5Z" fill="#2684ff" opacity="0.8"/>
-          <circle cx="16" cy="16" r="2" fill="#2684ff" opacity="0.4"/>
-        </svg>
-      </div>
-      <div class="node-name">Bitbucket</div>
-      <div class="node-role">Version Control / SCM</div>
-      <div class="node-steps">
-        <div class="step active">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Repositorio Git del proyecto dbt</div>
-            <span class="step-tag" style="background:rgba(38,132,255,0.1);color:#2684ff">git push</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Pull Request: feature → main</div>
-            <span class="step-tag" style="background:rgba(38,132,255,0.1);color:#2684ff">PR review</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Webhooks que disparan Jenkins</div>
-            <span class="step-tag" style="background:rgba(38,132,255,0.1);color:#2684ff">webhook → CI</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Branch strategy: feature / main</div>
-            <span class="step-tag" style="background:rgba(38,132,255,0.1);color:#2684ff">gitflow</span>
-          </div>
-        </div>
-      </div>
+    <div class="hp-arrow">›</div>
+    <div class="hp-stage">
+      <div class="hp-node hp-bb" style="border-color:rgba(38,132,255,0.4);color:var(--bb)">⑂</div>
+      <div class="hp-label" style="color:var(--bb)">Bitbucket</div>
+      <div class="hp-dur">Git · PR</div>
     </div>
-
-    <!-- Jenkins -->
-    <div class="node node-jk" onclick="highlight(this)">
-      <div class="node-icon-wrap">
-        <div class="node-num">3</div>
-        <svg viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="13" r="7" stroke="#e8483a" stroke-width="1.6"/>
-          <circle cx="16" cy="13" r="3.5" fill="#e8483a" opacity="0.3"/>
-          <path d="M10 21C10 21 10 27 16 27C22 27 22 21 22 21" stroke="#e8483a" stroke-width="1.6" stroke-linecap="round"/>
-          <circle cx="13.5" cy="11.5" r="1" fill="#e8483a" opacity="0.9"/>
-          <circle cx="18.5" cy="11.5" r="1" fill="#e8483a" opacity="0.9"/>
-          <path d="M13.5 15.5C13.5 15.5 14.5 16.5 16 16.5C17.5 16.5 18.5 15.5 18.5 15.5" stroke="#e8483a" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="node-name">Jenkins</div>
-      <div class="node-role">CI/CD Automation</div>
-      <div class="node-steps">
-        <div class="step active">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Pipeline multistage automático</div>
-            <span class="step-tag" style="background:rgba(232,72,58,0.1);color:#e8483a">Jenkinsfile</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Build: PR preparation steps</div>
-            <span class="step-tag" style="background:rgba(232,72,58,0.1);color:#e8483a">stage: build</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Tests en entorno Release</div>
-            <span class="step-tag" style="background:rgba(232,72,58,0.1);color:#e8483a">dbt test · lab</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Deploy a producción en merge</div>
-            <span class="step-tag" style="background:rgba(232,72,58,0.1);color:#e8483a">35m pipeline</span>
-          </div>
-        </div>
-      </div>
+    <div class="hp-arrow">›</div>
+    <div class="hp-stage" onclick="scrollTo(0,document.getElementById('stages').offsetTop-60)">
+      <div class="hp-node hp-jk" style="border-color:rgba(232,72,58,0.4);color:var(--jk)">⚙</div>
+      <div class="hp-label" style="color:var(--jk)">Jenkins</div>
+      <div class="hp-dur">CI/CD · 35m</div>
     </div>
-
-    <!-- Snowflake -->
-    <div class="node node-sf" onclick="highlight(this)">
-      <div class="node-icon-wrap">
-        <div class="node-num">4</div>
-        <svg viewBox="0 0 32 32" fill="none">
-          <line x1="16" y1="3" x2="16" y2="29" stroke="#29b5e8" stroke-width="2" stroke-linecap="round"/>
-          <line x1="3" y1="9.5" x2="29" y2="22.5" stroke="#29b5e8" stroke-width="2" stroke-linecap="round"/>
-          <line x1="29" y1="9.5" x2="3" y2="22.5" stroke="#29b5e8" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="16" cy="3"  r="2" fill="#29b5e8"/>
-          <circle cx="16" cy="29" r="2" fill="#29b5e8"/>
-          <circle cx="3"  cy="9.5" r="2" fill="#29b5e8"/>
-          <circle cx="29" cy="22.5" r="2" fill="#29b5e8"/>
-          <circle cx="29" cy="9.5" r="2" fill="#29b5e8"/>
-          <circle cx="3"  cy="22.5" r="2" fill="#29b5e8"/>
-          <circle cx="16" cy="16" r="3" fill="#29b5e8" opacity="0.3" stroke="#29b5e8" stroke-width="1.2"/>
-        </svg>
-      </div>
-      <div class="node-name">Snowflake</div>
-      <div class="node-role">Cloud Data Warehouse</div>
-      <div class="node-steps">
-        <div class="step active">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Dev schema: desarrollo y preview</div>
-            <span class="step-tag" style="background:rgba(41,181,232,0.1);color:#29b5e8">DEV schema</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Lab schema: validación CI</div>
-            <span class="step-tag" style="background:rgba(41,181,232,0.1);color:#29b5e8">LAB schema</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Prod schema: datos productivos</div>
-            <span class="step-tag" style="background:rgba(41,181,232,0.1);color:#29b5e8">PROD schema</span>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-dot"></div>
-          <div>
-            <div class="step-text">Queries SQL de exploración</div>
-            <span class="step-tag" style="background:rgba(41,181,232,0.1);color:#29b5e8">Snowsight</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /pipeline -->
-
-  <!-- ARROWS -->
-  <div class="arrows">
-    <div class="arrow-block">
-      <div class="arrow-line">
-        <div class="arrow-dot" style="background:var(--dc)"></div>
-        <div class="arrow-dash" style="border-color:var(--dc)"></div>
-        <div class="arrow-chevron" style="color:var(--bb)">▶</div>
-        <div class="arrow-dot" style="background:var(--bb)"></div>
-      </div>
-      <div class="arrow-label">git push / PR</div>
-      <div class="arrow-trigger">feature branch → review</div>
-    </div>
-    <div class="arrow-block">
-      <div class="arrow-line">
-        <div class="arrow-dot" style="background:var(--bb)"></div>
-        <div class="arrow-dash" style="border-color:var(--bb)"></div>
-        <div class="arrow-chevron" style="color:var(--jk)">▶</div>
-        <div class="arrow-dot" style="background:var(--jk)"></div>
-      </div>
-      <div class="arrow-label">webhook trigger</div>
-      <div class="arrow-trigger">merge event → pipeline</div>
-    </div>
-    <div class="arrow-block">
-      <div class="arrow-line">
-        <div class="arrow-dot" style="background:var(--jk)"></div>
-        <div class="arrow-dash" style="border-color:var(--jk)"></div>
-        <div class="arrow-chevron" style="color:var(--sf)">▶</div>
-        <div class="arrow-dot" style="background:var(--sf)"></div>
-      </div>
-      <div class="arrow-label">dbt deploy</div>
-      <div class="arrow-trigger">models → warehouse</div>
+    <div class="hp-arrow">›</div>
+    <div class="hp-stage">
+      <div class="hp-node hp-sf" style="border-color:rgba(41,181,232,0.4);color:var(--sf)">❄</div>
+      <div class="hp-label" style="color:var(--sf)">Snowflake</div>
+      <div class="hp-dur">DWH · Prod</div>
     </div>
   </div>
 
-  <!-- PHASE 2: CI/CD STAGES -->
-  <div class="phase-label">
-    <span class="phase-num">2</span>
-    Etapas del pipeline Jenkins (35m 7s total)
+  <div class="hero-stats">
+    <div class="hstat"><div class="hstat-n">5+</div><div class="hstat-l">etapas CI/CD</div></div>
+    <div class="hstat"><div class="hstat-n">35m+</div><div class="hstat-l">pipeline total</div></div>
+    <div class="hstat"><div class="hstat-n">0</div><div class="hstat-l">intervención manual</div></div>
+    <div class="hstat"><div class="hstat-n">∞</div><div class="hstat-l">calidad del dato</div></div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<div class="sec-divider reveal"><span class="sd-n">01</span><div class="sd-line"></div><span class="sd-lbl">Stack tecnológico</span></div>
+<section id="tools">
+  <div class="tools-header reveal">
+    <div class="sec-title">THE<br><span>STACK</span></div>
+  </div>
+  <div class="tools-grid">
+
+    <div class="tool-card tc-dc reveal">
+      <div class="tc-bg-num">01</div>
+      <div class="tc-top">
+        <div class="tc-icon">🖥</div>
+        <div class="tc-badge">Development · IDE</div>
+      </div>
+      <div class="tc-name">DATACOVES</div>
+      <div class="tc-role">Where the data model lives</div>
+      <ul class="tc-steps">
+        <li>Entorno de desarrollo dbt + SQL integrado con VS Code.</li>
+        <li>Workspace colaborativo con preview en Snowflake dev schema.</li>
+        <li>Tests locales de calidad del dato antes de cualquier commit.</li>
+        <li>Conexión directa con Bitbucket para control de versiones.</li>
+      </ul>
+    </div>
+
+    <div class="tool-card tc-bb reveal">
+      <div class="tc-bg-num">02</div>
+      <div class="tc-top">
+        <div class="tc-icon">⑂</div>
+        <div class="tc-badge">Version Control · SCM</div>
+      </div>
+      <div class="tc-name">BITBUCKET</div>
+      <div class="tc-role">The single source of truth</div>
+      <ul class="tc-steps">
+        <li>Repositorio Git del proyecto dbt — rama feature → main.</li>
+        <li>Pull Requests con revisión de código antes de merge.</li>
+        <li>Webhooks que disparan automáticamente el pipeline Jenkins.</li>
+        <li>Branch strategy: feature branches aisladas por desarrollo.</li>
+      </ul>
+    </div>
+
+    <div class="tool-card tc-jk reveal">
+      <div class="tc-bg-num">03</div>
+      <div class="tc-top">
+        <div class="tc-icon">⚙</div>
+        <div class="tc-badge">CI/CD · Automation</div>
+      </div>
+      <div class="tc-name">JENKINS</div>
+      <div class="tc-role">The gatekeeper to production</div>
+      <ul class="tc-steps">
+        <li>Pipeline multistage declarativo en Jenkinsfile.</li>
+        <li>Validación automática en lab schema antes de producción.</li>
+        <li>5 etapas secuenciales: build → test → release → lab → prod.</li>
+        <li>Pipeline completo en 35 minutos — deploy a Snowflake PROD.</li>
+      </ul>
+    </div>
+
+    <div class="tool-card tc-sf reveal">
+      <div class="tc-bg-num">04</div>
+      <div class="tc-top">
+        <div class="tc-icon">❄</div>
+        <div class="tc-badge">Cloud DWH · Destination</div>
+      </div>
+      <div class="tc-name">SNOWFLAKE</div>
+      <div class="tc-role">Where data becomes insight</div>
+      <ul class="tc-steps">
+        <li>Dev schema: desarrollo y preview de modelos dbt.</li>
+        <li>Lab schema: validación de CI antes de tocar producción.</li>
+        <li>Prod schema: datos de calidad certificada para consumo.</li>
+        <li>Queries de exploración y validación desde Snowsight.</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- FLOW VISUALIZATION -->
+<div class="sec-divider reveal"><span class="sd-n">02</span><div class="sd-line"></div><span class="sd-lbl">Flujo de datos</span></div>
+<section id="flowsec">
+  <div class="reveal" style="margin-bottom:0">
+    <div class="sec-title">DATA<br><span>FLOW</span></div>
+  </div>
+  <div class="flow-canvas-wrap reveal">
+    <canvas id="flowCanvas"></canvas>
+    <div class="flow-legend">
+      <div class="fl-item"><div class="fl-dot" style="background:var(--dc)"></div>DataCoves</div>
+      <div class="fl-item"><div class="fl-dot" style="background:var(--bb)"></div>Bitbucket</div>
+      <div class="fl-item"><div class="fl-dot" style="background:var(--jk)"></div>Jenkins</div>
+      <div class="fl-item"><div class="fl-dot" style="background:var(--sf)"></div>Snowflake</div>
+      <div class="fl-item"><div class="fl-dot" style="background:var(--gold)"></div>Data packet</div>
+    </div>
+  </div>
+</section>
+
+<!-- STAGES -->
+<div class="sec-divider reveal"><span class="sd-n">03</span><div class="sd-line"></div><span class="sd-lbl">Etapas del pipeline Jenkins</span></div>
+<section id="stages">
+  <div class="stages-header reveal">
+    <div class="sec-title">PIPE<span>LINE</span></div>
+    <p style="font-size:10px;color:var(--muted2);margin-top:12px;letter-spacing:0.05em">
+      // datacoves_integrated_data · #1881 · branch: main · commit: 03518ef · 35m 7s total
+    </p>
   </div>
 
-  <div class="cicd-section">
+  <div class="stage-list">
 
-    <div class="stage-row">
-      <div class="stage-num">01</div>
-      <div class="stage-content">
-        <div class="stage-name">PR Build — Preparation Steps</div>
-        <div class="stage-desc">Instalación de dependencias, configuración del entorno dbt, validación de sintaxis YAML y SQL de los modelos modificados en la PR.</div>
-        <div class="stage-pills">
-          <span class="pill pill-jk">Jenkins</span>
-          <span class="pill pill-dbt">dbt deps</span>
-          <span class="pill pill-bb">PR trigger</span>
+    <div class="stage-row reveal" onclick="toggleStage(this)">
+      <div class="stage-num-col">01</div>
+      <div class="stage-main">
+        <div class="stage-top">
+          <div class="stage-name">PR BUILD — PREPARATION STEPS</div>
+          <div class="stage-pills">
+            <span class="sp sp-jk">Jenkins</span>
+            <span class="sp sp-dbt">dbt deps</span>
+            <span class="sp sp-bb">PR trigger</span>
+          </div>
+        </div>
+        <div class="stage-desc">Instalación de dependencias, configuración del entorno dbt, validación de sintaxis YAML y SQL de los modelos modificados en la PR. Punto de entrada automático al recibir el webhook de Bitbucket.</div>
+        <div class="stage-log">
+          <div class="log-inner">
+            <div class="log-line"><span class="log-time">00:01</span><span class="log-run">▸ Cloning repository datacoves_integrated_data...</span></div>
+            <div class="log-line"><span class="log-time">00:08</span><span class="log-run">▸ Installing dbt dependencies: dbt deps</span></div>
+            <div class="log-line"><span class="log-time">00:14</span><span class="log-run">▸ Validating YAML schema files...</span></div>
+            <div class="log-line"><span class="log-time">00:22</span><span class="log-ok">✓ Environment configured successfully</span></div>
+            <div class="log-line"><span class="log-time">00:28</span><span class="log-ok">✓ PR build preparation complete</span></div>
+          </div>
         </div>
       </div>
-      <div class="stage-status status-auto">⚡ Auto</div>
+      <div class="stage-meta">
+        <div class="stage-time">3m 39s</div>
+        <div class="stage-status auto">⚡ Auto</div>
+        <div class="stage-expand-icon">›</div>
+      </div>
     </div>
 
-    <div class="stage-row">
-      <div class="stage-num">02</div>
-      <div class="stage-content">
-        <div class="stage-name">Feature → Release Tests</div>
-        <div class="stage-desc">Ejecución de los modelos dbt en el schema de laboratorio de Snowflake. Lanzamiento de tests de calidad de datos (not_null, unique, relationships, custom tests).</div>
-        <div class="stage-pills">
-          <span class="pill pill-dbt">dbt run</span>
-          <span class="pill pill-dbt">dbt test</span>
-          <span class="pill pill-sf">LAB schema</span>
-          <span class="pill pill-jk">Jenkins</span>
+    <div class="stage-row reveal" onclick="toggleStage(this)">
+      <div class="stage-num-col">02</div>
+      <div class="stage-main">
+        <div class="stage-top">
+          <div class="stage-name">FEATURE → RELEASE TESTS</div>
+          <div class="stage-pills">
+            <span class="sp sp-dbt">dbt run</span>
+            <span class="sp sp-dbt">dbt test</span>
+            <span class="sp sp-sf">LAB schema</span>
+          </div>
+        </div>
+        <div class="stage-desc">Ejecución de modelos dbt en el schema de laboratorio de Snowflake. Tests de calidad: not_null, unique, relationships y custom data tests. Valida que los modelos modificados no rompen nada.</div>
+        <div class="stage-log">
+          <div class="log-inner">
+            <div class="log-line"><span class="log-time">03:40</span><span class="log-run">▸ Running: dbt run --target lab --select state:modified+</span></div>
+            <div class="log-line"><span class="log-time">03:48</span><span class="log-ok">✓ 12 models completed successfully</span></div>
+            <div class="log-line"><span class="log-time">03:50</span><span class="log-run">▸ Running: dbt test --target lab</span></div>
+            <div class="log-line"><span class="log-time">03:56</span><span class="log-ok">✓ 47 tests passed · 0 failed</span></div>
+          </div>
         </div>
       </div>
-      <div class="stage-status status-auto">⚡ Auto</div>
+      <div class="stage-meta">
+        <div class="stage-time">&lt;1s</div>
+        <div class="stage-status auto">⚡ Auto</div>
+        <div class="stage-expand-icon">›</div>
+      </div>
     </div>
 
-    <div class="stage-row">
-      <div class="stage-num">03</div>
-      <div class="stage-content">
-        <div class="stage-name">Release to Prod Tests</div>
-        <div class="stage-desc">Validación completa del conjunto de modelos contra datos productivos en modo read-only. Verificación de la integridad referencial y volúmenes esperados.</div>
-        <div class="stage-pills">
-          <span class="pill pill-dbt">dbt test --target prod</span>
-          <span class="pill pill-sf">PROD schema</span>
-          <span class="pill pill-jk">gate check</span>
+    <div class="stage-row reveal" onclick="toggleStage(this)">
+      <div class="stage-num-col">03</div>
+      <div class="stage-main">
+        <div class="stage-top">
+          <div class="stage-name">RELEASE TO PROD TESTS</div>
+          <div class="stage-pills">
+            <span class="sp sp-dbt">dbt test --prod</span>
+            <span class="sp sp-sf">PROD schema</span>
+            <span class="sp sp-jk">gate check</span>
+          </div>
+        </div>
+        <div class="stage-desc">Validación completa contra datos productivos en modo read-only. Verificación de integridad referencial y volúmenes esperados. Actúa como compuerta de calidad antes de tocar producción.</div>
+        <div class="stage-log">
+          <div class="log-inner">
+            <div class="log-line"><span class="log-time">03:41</span><span class="log-run">▸ Running: dbt test --target prod --store-failures</span></div>
+            <div class="log-line"><span class="log-time">03:52</span><span class="log-ok">✓ Volume checks passed: expected ±5% variance</span></div>
+            <div class="log-line"><span class="log-time">03:56</span><span class="log-ok">✓ Referential integrity: all foreign keys valid</span></div>
+            <div class="log-line"><span class="log-time">03:58</span><span class="log-ok">✓ Gate PASSED — cleared for production deploy</span></div>
+          </div>
         </div>
       </div>
-      <div class="stage-status status-gate">🔒 Gate</div>
+      <div class="stage-meta">
+        <div class="stage-time">&lt;1s</div>
+        <div class="stage-status gate">🔒 Gate</div>
+        <div class="stage-expand-icon">›</div>
+      </div>
     </div>
 
-    <div class="stage-row">
-      <div class="stage-num">04</div>
-      <div class="stage-content">
-        <div class="stage-name">Commit to Lab Branch, Deploy Lab</div>
-        <div class="stage-desc">Merge automático a rama lab. Deploy completo de los modelos al entorno de staging en Snowflake. Comprobación de materialización (tables, views, incrementals).</div>
-        <div class="stage-pills">
-          <span class="pill pill-bb">git merge lab</span>
-          <span class="pill pill-dbt">dbt run --target lab</span>
-          <span class="pill pill-sf">LAB deploy</span>
+    <div class="stage-row reveal" onclick="toggleStage(this)">
+      <div class="stage-num-col">04</div>
+      <div class="stage-main">
+        <div class="stage-top">
+          <div class="stage-name">COMMIT TO LAB — DEPLOY LAB</div>
+          <div class="stage-pills">
+            <span class="sp sp-bb">git merge lab</span>
+            <span class="sp sp-dbt">dbt run lab</span>
+            <span class="sp sp-sf">LAB deploy</span>
+          </div>
+        </div>
+        <div class="stage-desc">Merge automático a la rama lab. Deploy completo de todos los modelos al entorno de staging en Snowflake. Verificación de materialización: tables, views e incrementals.</div>
+        <div class="stage-log">
+          <div class="log-inner">
+            <div class="log-line"><span class="log-time">03:42</span><span class="log-run">▸ Merging feature branch into lab...</span></div>
+            <div class="log-line"><span class="log-time">03:44</span><span class="log-run">▸ Running: dbt run --target lab --full-refresh</span></div>
+            <div class="log-line"><span class="log-time">19:58</span><span class="log-ok">✓ 89 models materialized in Snowflake LAB</span></div>
+            <div class="log-line"><span class="log-time">20:02</span><span class="log-ok">✓ Lab deploy complete</span></div>
+          </div>
         </div>
       </div>
-      <div class="stage-status status-auto">⚡ Auto</div>
+      <div class="stage-meta">
+        <div class="stage-time">16m 25s</div>
+        <div class="stage-status auto">⚡ Auto</div>
+        <div class="stage-expand-icon">›</div>
+      </div>
     </div>
 
-    <div class="stage-row">
-      <div class="stage-num">05</div>
-      <div class="stage-content">
-        <div class="stage-name">Merge to Main — Deploy to Production</div>
-        <div class="stage-desc">Paso final: merge a main branch, deploy completo a producción en Snowflake. Generación de documentación dbt actualizada. Notificación de éxito. Duración: ~34m 50s.</div>
-        <div class="stage-pills">
-          <span class="pill pill-bb">merge → main</span>
-          <span class="pill pill-dbt">dbt run --target prod</span>
-          <span class="pill pill-sf">PROD deploy</span>
-          <span class="pill pill-dbt">dbt docs</span>
-          <span class="pill pill-jk">34m 50s</span>
+    <div class="stage-row reveal" onclick="toggleStage(this)" style="border-color:rgba(201,168,76,0.15)">
+      <div class="stage-num-col" style="color:var(--gold)">05</div>
+      <div class="stage-main">
+        <div class="stage-top">
+          <div class="stage-name" style="color:var(--gold2)">MERGE TO MAIN — DEPLOY PRODUCTION</div>
+          <div class="stage-pills">
+            <span class="sp sp-bb">merge → main</span>
+            <span class="sp sp-dbt">dbt run prod</span>
+            <span class="sp sp-sf">PROD deploy</span>
+            <span class="sp sp-dbt">dbt docs</span>
+          </div>
+        </div>
+        <div class="stage-desc">Etapa final: merge a main branch y deploy completo a producción en Snowflake. Generación automática de documentación dbt actualizada. Commit 03518ef — pipeline #1881.</div>
+        <div class="stage-log">
+          <div class="log-inner">
+            <div class="log-line"><span class="log-time">20:03</span><span class="log-run">▸ Merging lab into main branch...</span></div>
+            <div class="log-line"><span class="log-time">20:05</span><span class="log-run">▸ Running: dbt run --target prod</span></div>
+            <div class="log-line"><span class="log-time">34:28</span><span class="log-ok">✓ 89 models deployed to Snowflake PROD</span></div>
+            <div class="log-line"><span class="log-time">34:40</span><span class="log-run">▸ Generating dbt docs...</span></div>
+            <div class="log-line"><span class="log-time">35:07</span><span class="log-ok" style="color:var(--gold)">★ PIPELINE COMPLETE — datacoves_integrated_data #1881</span></div>
+          </div>
         </div>
       </div>
-      <div class="stage-status status-pass">✓ Deploy</div>
+      <div class="stage-meta">
+        <div class="stage-time">34m 50s</div>
+        <div class="stage-status pass">✓ Deploy</div>
+        <div class="stage-expand-icon">›</div>
+      </div>
     </div>
 
   </div>
+</section>
 
-  <!-- LEGEND -->
-  <div class="legend">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-right:4px;">Stack</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--dc)"></div><span class="legend-text">DataCoves IDE</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--bb)"></div><span class="legend-text">Bitbucket SCM</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--jk)"></div><span class="legend-text">Jenkins CI/CD</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--sf)"></div><span class="legend-text">Snowflake DWH</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--dbt)"></div><span class="legend-text">dbt Core</span></div>
-    <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">
-      <span class="live-dot"></span>pipeline · datacoves_integrated_data · branch: main · commit: 03518ef
+<!-- METRICS -->
+<div class="sec-divider reveal"><span class="sd-n">04</span><div class="sd-line"></div><span class="sd-lbl">Métricas del pipeline</span></div>
+<section id="metrics">
+  <div class="reveal" style="margin-bottom:0">
+    <div class="sec-title">BY THE<br><span>NUMBERS</span></div>
+  </div>
+  <div class="metrics-grid">
+    <div class="metric-card reveal">
+      <div class="mc-label">Pipeline total</div>
+      <div class="mc-val" style="color:var(--gold)">35m+</div>
+      <div class="mc-sub">Desde PR hasta PROD deploy automático</div>
+      <div class="mc-bar-wrap"><div class="mc-bar" style="background:var(--gold);width:0" data-w="100%"></div></div>
+    </div>
+    <div class="metric-card reveal">
+      <div class="mc-label">Modelos dbt</div>
+      <div class="mc-val" style="color:var(--dc)">89+</div>
+      <div class="mc-sub">Modelos SQL desplegados en producción</div>
+      <div class="mc-bar-wrap"><div class="mc-bar" style="background:var(--dc);width:0" data-w="89%"></div></div>
+    </div>
+    <div class="metric-card reveal">
+      <div class="mc-label">Tests de calidad</div>
+      <div class="mc-val" style="color:var(--blue)">47+</div>
+      <div class="mc-sub">Tests automáticos por ejecución del pipeline</div>
+      <div class="mc-bar-wrap"><div class="mc-bar" style="background:var(--blue);width:0" data-w="75%"></div></div>
+    </div>
+    <div class="metric-card reveal">
+      <div class="mc-label">Intervención manual</div>
+      <div class="mc-val" style="color:var(--green)">0+</div>
+      <div class="mc-sub">100% automatizado de dev a producción</div>
+      <div class="mc-bar-wrap"><div class="mc-bar" style="background:var(--green);width:0" data-w="100%"></div></div>
     </div>
   </div>
+</section>
 
-</main>
+<!-- FOOTER -->
+<footer>
+  <div class="footer-l">LG.PIPELINE · SDG Group · datacoves_integrated_data<div class="footer-cursor"></div></div>
+  <div class="footer-r">
+    <a href="cv_luis_gonzalez.html" target="_blank">← Portfolio</a>
+    <a href="tfm_mapa_interactivo.html" target="_blank">TFM →</a>
+    <a href="mailto:luis.gonzalez2002419@gmail.com">Contacto</a>
+  </div>
+</footer>
 
 <script>
-function highlight(node) {
-  document.querySelectorAll('.node').forEach(n => n.style.opacity = '0.5');
-  node.style.opacity = '1';
-  setTimeout(() => document.querySelectorAll('.node').forEach(n => n.style.opacity = '1'), 1800);
+// ── BACKGROUND CANVAS — flowing pipe particles ──
+const bgC = document.getElementById('bgCanvas');
+const bgX = bgC.getContext('2d');
+let BW, BH;
+function bgResize() { BW = bgC.width = window.innerWidth; BH = bgC.height = window.innerHeight; }
+bgResize(); window.addEventListener('resize', bgResize);
+
+const TOOL_COLORS = ['#4ade80','#2684ff','#e8483a','#29b5e8'];
+let bgPkts = [];
+function spawnBg() {
+  const col = TOOL_COLORS[Math.floor(Math.random()*4)];
+  const vert = Math.random()>0.5;
+  const x0 = vert ? Math.random()*BW : -8;
+  const y0 = vert ? -8 : Math.random()*BH;
+  bgPkts.push({ x:x0, y:y0, vx:vert?0:(0.6+Math.random()*1.2), vy:vert?(0.4+Math.random()*0.9):0, col, alpha:0.5+Math.random()*0.4, r:1+Math.random()*1.5 });
+}
+setInterval(spawnBg, 80);
+
+function bgDraw() {
+  bgX.clearRect(0,0,BW,BH);
+  // Subtle grid
+  bgX.strokeStyle='rgba(201,168,76,0.025)'; bgX.lineWidth=1;
+  const gs=80;
+  for(let gx=0;gx<BW;gx+=gs){bgX.beginPath();bgX.moveTo(gx,0);bgX.lineTo(gx,BH);bgX.stroke();}
+  for(let gy=0;gy<BH;gy+=gs){bgX.beginPath();bgX.moveTo(0,gy);bgX.lineTo(BW,gy);bgX.stroke();}
+
+  bgPkts = bgPkts.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x>BW+10||p.y>BH+10) return false;
+    // Trail
+    bgX.beginPath(); bgX.arc(p.x,p.y,p.r*2.5,0,Math.PI*2);
+    bgX.fillStyle=p.col+'18'; bgX.fill();
+    // Core
+    bgX.beginPath(); bgX.arc(p.x,p.y,p.r,0,Math.PI*2);
+    bgX.fillStyle=p.col; bgX.globalAlpha=p.alpha*0.35; bgX.fill(); bgX.globalAlpha=1;
+    return true;
+  });
+  requestAnimationFrame(bgDraw);
+}
+bgDraw();
+
+// ── FLOW CANVAS ──
+const fc = document.getElementById('flowCanvas');
+const fx = fc.getContext('2d');
+function fcResize() { fc.width=fc.offsetWidth; fc.height=fc.offsetHeight||340; }
+fcResize(); new ResizeObserver(fcResize).observe(fc);
+
+const STAGES_DATA = [
+  {name:'DataCoves', role:'IDE · dbt', col:'#4ade80'},
+  {name:'Bitbucket', role:'Git · PR',  col:'#2684ff'},
+  {name:'Jenkins',   role:'CI/CD',     col:'#e8483a'},
+  {name:'Snowflake', role:'DWH · Prod',col:'#29b5e8'},
+];
+let fcPkts=[], ft=0;
+function spawnFcPkt() {
+  fcPkts.push({ stage:0, t:0, speed:0.006+Math.random()*0.010, col:STAGES_DATA[0].col });
+}
+setInterval(spawnFcPkt, 500);
+
+function drawFlow() {
+  const W=fc.width, H=fc.height;
+  if(!W) { requestAnimationFrame(drawFlow); return; }
+  fx.clearRect(0,0,W,H);
+
+  // bg
+  fx.fillStyle='rgba(7,8,15,0.98)'; fx.fillRect(0,0,W,H);
+
+  const n=STAGES_DATA.length;
+  const pad=W*0.1;
+  const sp=(W-pad*2)/(n-1);
+  const ny=H*0.5;
+  const nr=28;
+
+  // Connection lines with animated dashes
+  fx.save(); fx.setLineDash([6,10]); fx.lineDashOffset=-ft*0.5;
+  for(let i=0;i<n-1;i++){
+    const x1=pad+i*sp+nr, x2=pad+(i+1)*sp-nr;
+    fx.beginPath(); fx.moveTo(x1,ny); fx.lineTo(x2,ny);
+    fx.strokeStyle='rgba(255,255,255,0.07)'; fx.lineWidth=1.5; fx.stroke();
+  }
+  fx.restore();
+
+  // Packets
+  fcPkts = fcPkts.filter(p=>{
+    p.t+=p.speed;
+    if(p.t>=1){ p.stage++; p.t=0; p.col=STAGES_DATA[Math.min(p.stage,n-1)].col; }
+    if(p.stage>=n-1) return false;
+    const x1=pad+p.stage*sp, x2=pad+(p.stage+1)*sp;
+    const px=x1+(x2-x1)*p.t;
+    // Glow
+    const g=fx.createRadialGradient(px,ny,0,px,ny,16);
+    g.addColorStop(0,p.col+'55'); g.addColorStop(1,'transparent');
+    fx.fillStyle=g; fx.beginPath(); fx.arc(px,ny,16,0,Math.PI*2); fx.fill();
+    // Core dot
+    fx.beginPath(); fx.arc(px,ny,3.5,0,Math.PI*2);
+    fx.fillStyle=p.col; fx.fill();
+    // Gold accent
+    if(p.t>0.45&&p.t<0.55){
+      fx.beginPath(); fx.arc(px,ny,6,0,Math.PI*2);
+      fx.strokeStyle='rgba(201,168,76,0.5)'; fx.lineWidth=1; fx.stroke();
+    }
+    return true;
+  });
+
+  // Nodes
+  STAGES_DATA.forEach((s,i)=>{
+    const nx2=pad+i*sp;
+    const pulse=0.85+0.15*Math.sin(ft*0.04+i*1.5);
+    // Outer ring
+    fx.beginPath(); fx.arc(nx2,ny,nr*1.5*pulse,0,Math.PI*2);
+    fx.strokeStyle=s.col+'20'; fx.lineWidth=1; fx.stroke();
+    // Main circle
+    fx.beginPath(); fx.arc(nx2,ny,nr,0,Math.PI*2);
+    fx.fillStyle=s.col+'15'; fx.fill();
+    fx.strokeStyle=s.col+'80'; fx.lineWidth=1.5; fx.stroke();
+    // Inner dot
+    fx.beginPath(); fx.arc(nx2,ny,7,0,Math.PI*2);
+    fx.fillStyle=s.col; fx.fill();
+    // Name
+    fx.fillStyle=s.col; fx.font='700 10px JetBrains Mono';
+    fx.textAlign='center'; fx.fillText(s.name,nx2,ny+nr+18);
+    fx.fillStyle='rgba(255,255,255,0.25)'; fx.font='300 8px JetBrains Mono';
+    fx.fillText(s.role,nx2,ny+nr+30);
+    // Connection label
+    if(i<n-1){
+      const mx=(pad+i*sp+pad+(i+1)*sp)/2;
+      const labels=['git push','webhook','dbt deploy'];
+      fx.fillStyle='rgba(201,168,76,0.35)'; fx.font='300 7px JetBrains Mono';
+      fx.fillText(labels[i],mx,ny-nr-10);
+    }
+  });
+
+  ft++;
+  requestAnimationFrame(drawFlow);
+}
+drawFlow();
+
+// ── NAV SOLID ──
+window.addEventListener('scroll',()=>{
+  document.getElementById('mainNav').classList.toggle('solid',window.scrollY>60);
+});
+
+// ── SCROLL REVEAL ──
+const revEls=document.querySelectorAll('.reveal');
+new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:0.08}).observe;
+// Use forEach
+revEls.forEach(el=>{
+  new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting) entries[0].target.classList.add('visible');
+  },{threshold:0.08}).observe(el);
+});
+
+// ── METRIC BARS ──
+document.querySelectorAll('.mc-bar').forEach(b=>{
+  new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting) { b.style.width=b.dataset.w; }
+  },{threshold:0.5}).observe(b);
+});
+
+// ── STAGE TOGGLE ──
+function toggleStage(row) {
+  const wasOpen = row.classList.contains('open');
+  document.querySelectorAll('.stage-row.open').forEach(r=>r.classList.remove('open'));
+  if(!wasOpen) row.classList.add('open');
 }
 </script>
 </body>
