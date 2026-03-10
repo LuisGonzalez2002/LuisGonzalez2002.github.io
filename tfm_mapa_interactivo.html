@@ -3,355 +3,784 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TFM · Predicción de Tramos de Concentración de Accidentes — Madrid</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>TFM · Predicción de TCAs · Madrid</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <style>
-:root{--bg:#07070f;--surface:#0f0f1c;--surface2:#15152a;--accent:#00e5ff;--accent2:#7c3aed;--accent3:#f59e0b;--danger:#ef4444;--safe:#22c55e;--text:#e2e2f0;--muted:#5a5a7a;--border:rgba(0,229,255,0.12)}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px);background-size:36px 36px;pointer-events:none;z-index:0}
-.topbar{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(7,7,15,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
-.topbar-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.3em;color:var(--accent);text-transform:uppercase}
-.topbar-name{font-weight:800;font-size:13px;color:#fff}
-.topbar-sub{font-size:10px;color:var(--muted);margin-top:1px}
-.topbar-right{display:flex;align-items:center;gap:14px}
-.tomtom-badge{font-family:'Space Mono',monospace;font-size:9px;border:1px solid rgba(124,58,237,0.5);padding:4px 10px;color:#a78bfa;letter-spacing:0.1em;background:rgba(124,58,237,0.08)}
-.status-dot{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:var(--safe)}
-.dot-pulse{width:7px;height:7px;border-radius:50%;background:var(--safe);animation:pulse 2s ease infinite}
-.layout{display:grid;grid-template-columns:295px 1fr;height:calc(100vh - 53px);position:relative;z-index:1}
-.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
-.sidebar::-webkit-scrollbar{width:3px}
-.sidebar::-webkit-scrollbar-thumb{background:var(--border)}
-.sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
-.sec-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.25em;color:var(--accent);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.model-card{background:var(--surface2);border:1px solid var(--border);padding:11px;margin-bottom:7px}
-.model-card.winner{border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.04)}
-.model-name{font-size:11px;font-weight:700;color:#fff;margin-bottom:1px}
-.model-type{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:7px}
-.metric-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid rgba(255,255,255,0.04)}
-.metric-name{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
-.metric-val{font-family:'Space Mono',monospace;font-size:10px;font-weight:700}
-.g{color:var(--safe)}.w{color:var(--accent3)}.c{color:var(--accent)}
-.toggle-group{display:flex;flex-direction:column;gap:5px}
-.toggle-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border:1px solid transparent;cursor:pointer;transition:all 0.2s;user-select:none}
-.toggle-item:hover{border-color:var(--border)}
-.toggle-item.active{border-color:var(--accent);background:rgba(0,229,255,0.05)}
-.toggle-left{display:flex;align-items:center;gap:8px}
-.toggle-color{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.toggle-label{font-size:11px;font-weight:600}
-.toggle-sub{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-top:1px}
-.toggle-switch{width:28px;height:15px;border-radius:8px;background:var(--surface);border:1px solid var(--muted);position:relative;transition:all 0.2s;flex-shrink:0}
-.toggle-switch::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:all 0.2s}
-.toggle-item.active .toggle-switch{background:rgba(0,229,255,0.2);border-color:var(--accent)}
-.toggle-item.active .toggle-switch::after{background:var(--accent);left:14px;box-shadow:0 0 5px var(--accent)}
-.franja-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.franja-btn{padding:7px 5px;text-align:center;border:1px solid var(--border);cursor:pointer;background:var(--surface2);transition:all 0.2s;font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;line-height:1.4}
-.franja-btn:hover{border-color:var(--accent);color:var(--accent)}
-.franja-btn.active{border-color:var(--accent);background:rgba(0,229,255,0.08);color:var(--accent)}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.stat-box{background:var(--surface2);border:1px solid var(--border);padding:9px 7px;text-align:center}
-.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;line-height:1;margin-bottom:2px}
-.stat-lbl{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
-.shap-list{display:flex;flex-direction:column;gap:5px}
-.shap-item{display:flex;flex-direction:column;gap:3px}
-.shap-top{display:flex;justify-content:space-between;align-items:center}
-.shap-name{font-family:'Space Mono',monospace;font-size:8px;color:var(--text)}
-.shap-pct{font-family:'Space Mono',monospace;font-size:9px;color:var(--accent);font-weight:700}
-.shap-bar-bg{height:3px;background:rgba(255,255,255,0.06);border-radius:2px}
-.shap-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
-.legend-bar{height:6px;border-radius:3px;background:linear-gradient(to right,#22c55e,#eab308,#ef4444);margin-bottom:5px}
-.legend-labels{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)}
-.point-info{background:var(--surface2);border:1px solid var(--accent);padding:11px;display:none}
-.point-info.visible{display:block}
-.point-title{font-size:11px;font-weight:700;color:#fff;margin-bottom:6px}
-.point-row{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:8px;padding:3px 0;border-top:1px solid rgba(255,255,255,0.05);color:var(--muted)}
-.point-row span:last-child{color:var(--text)}
-.no-point{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);line-height:1.6}
-#map{width:100%;height:100%;z-index:1}
-.leaflet-tile{filter:brightness(0.55) saturate(0.3) hue-rotate(185deg)}
-.leaflet-container{background:#080812}
-.map-badge{position:absolute;z-index:1000;bottom:10px;right:10px;background:rgba(7,7,15,0.85);border:1px solid var(--border);backdrop-filter:blur(8px);padding:5px 10px;font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:0.06em;pointer-events:none}
-.custom-tooltip{background:#0f0f1c;border:1px solid rgba(0,229,255,0.3);color:#e2e2f0;font-family:'Space Mono',monospace;font-size:10px;border-radius:0;padding:4px 8px;box-shadow:0 0 10px rgba(0,229,255,0.1)}
-.custom-tooltip::before{display:none}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+:root {
+  --bg:      #04050e;
+  --panel:   #080a17;
+  --panel2:  #0d1020;
+  --panel3:  #111428;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --green:   #00ffa3;
+  --green2:  #00c97e;
+  --amber:   #ffb800;
+  --red:     #ff4757;
+  --blue:    #4fc3f7;
+  --purple:  #b388ff;
+  --text:    #c0cce8;
+  --muted:   #424868;
+  --muted2:  #6b74a0;
+  --bright:  #eef2ff;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; }
+
+body {
+  background: var(--bg);
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+}
+
+/* ─── LOADING OVERLAY ─── */
+#loader {
+  position: fixed; inset:0; z-index:9999;
+  background: var(--bg);
+  display: flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:12px;
+  transition: opacity 0.8s ease;
+}
+#loader.out { opacity:0; pointer-events:none; }
+
+.loader-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px; color: var(--bright);
+  letter-spacing: 0.08em; line-height:1;
+}
+.loader-title span { color: var(--green); }
+.loader-sub { font-size:10px; color:var(--muted2); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:16px; }
+
+.loader-steps { display:flex; flex-direction:column; gap:6px; width:380px; }
+.ls { font-size:9px; color:var(--muted); opacity:0; transition:opacity 0.3s; display:flex; align-items:center; gap:8px; }
+.ls.show { opacity:1; color:var(--text); }
+.ls.done { color:var(--green2); }
+.ls-icon { width:14px; text-align:center; }
+
+.loader-bar-wrap { width:380px; height:2px; background:var(--panel3); margin-top:8px; overflow:hidden; }
+.loader-bar { height:100%; background:linear-gradient(90deg, var(--green2), var(--green)); width:0; transition:width 0.4s ease; }
+
+.loader-metrics {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:1px; width:380px; margin-top:16px; opacity:0;
+  transition:opacity 0.5s ease;
+}
+.loader-metrics.show { opacity:1; }
+.lm { background:var(--panel2); padding:12px 10px; text-align:center; }
+.lm-n { font-family:'Bebas Neue',sans-serif; font-size:26px; line-height:1; }
+.lm-l { font-size:7px; color:var(--muted2); letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
+
+/* ─── APP LAYOUT ─── */
+#app { width:100%; height:100%; display:grid; grid-template-rows:52px 1fr; opacity:0; transition:opacity 0.6s ease; }
+#app.show { opacity:1; }
+
+/* ─── TOPBAR ─── */
+.topbar {
+  background:rgba(4,5,14,0.95);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; backdrop-filter:blur(20px);
+  z-index:1000; position:relative;
+}
+.tb-left { display:flex; align-items:center; gap:20px; }
+.tb-badge {
+  font-size:9px; letter-spacing:0.2em; text-transform:uppercase;
+  border:1px solid rgba(0,255,163,0.3); padding:3px 10px;
+  color:var(--green); background:rgba(0,255,163,0.06);
+}
+.tb-title { display:flex; flex-direction:column; gap:1px; }
+.tb-name { font-family:'Bebas Neue',sans-serif; font-size:15px; color:var(--bright); letter-spacing:0.05em; }
+.tb-sub { font-size:8px; color:var(--muted2); letter-spacing:0.1em; }
+.tb-right { display:flex; align-items:center; gap:16px; }
+.tb-back {
+  font-size:9px; letter-spacing:0.15em; text-transform:uppercase;
+  border:1px solid var(--border2); padding:5px 12px;
+  color:var(--muted2); text-decoration:none; transition:all 0.2s;
+}
+.tb-back:hover { color:var(--green); border-color:rgba(0,255,163,0.4); background:rgba(0,255,163,0.05); }
+.tb-tomtom {
+  font-size:9px; letter-spacing:0.15em;
+  border:1px solid rgba(79,195,247,0.3); padding:5px 12px;
+  color:var(--blue); background:rgba(79,195,247,0.05);
+}
+.tb-live { display:flex; align-items:center; gap:6px; font-size:9px; color:var(--green2); }
+.pulse { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s ease infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.7)} }
+
+/* ─── MAIN CONTENT ─── */
+.content { display:grid; grid-template-columns:360px 1fr; height:100%; overflow:hidden; }
+
+/* ─── LEFT PANEL ─── */
+.left-panel {
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow-y:auto; overflow-x:hidden;
+}
+.left-panel::-webkit-scrollbar { width:2px; }
+.left-panel::-webkit-scrollbar-thumb { background:var(--border); }
+
+.lp-section { padding:20px 20px; border-bottom:1px solid var(--border); }
+
+.lp-label {
+  font-size:8px; letter-spacing:0.3em; color:var(--muted);
+  text-transform:uppercase; margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.lp-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── MODEL COMPARISON ── */
+.model-versus {
+  display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center;
+}
+.model-card {
+  background:var(--panel2); border:1px solid var(--border);
+  padding:14px 12px;
+}
+.model-card.winner { border-color:rgba(0,255,163,0.4); background:rgba(0,255,163,0.04); }
+.model-badge {
+  font-size:7px; letter-spacing:0.2em; text-transform:uppercase;
+  margin-bottom:6px; display:flex; align-items:center; gap:4px;
+}
+.model-badge.w { color:var(--green); }
+.model-badge.b { color:var(--muted2); }
+.model-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; color:var(--bright); margin-bottom:10px; line-height:1.2; }
+.model-metric { display:flex; justify-content:space-between; padding:3px 0; border-top:1px solid rgba(255,255,255,0.04); font-size:9px; }
+.model-metric-label { color:var(--muted2); }
+.model-metric-val { font-weight:700; }
+.model-metric-val.g { color:var(--green); }
+.model-metric-val.a { color:var(--amber); }
+.vs-sep { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--muted); text-align:center; }
+.improvement-badge {
+  text-align:center; margin-top:12px;
+  background:rgba(0,255,163,0.08); border:1px solid rgba(0,255,163,0.25);
+  padding:8px; font-size:9px; color:var(--green);
+}
+.improvement-num { font-family:'Bebas Neue',sans-serif; font-size:28px; display:block; }
+
+/* ── SHAP ── */
+.shap-list { display:flex; flex-direction:column; gap:7px; }
+.shap-row { display:flex; flex-direction:column; gap:3px; }
+.shap-top { display:flex; justify-content:space-between; }
+.shap-name { font-size:9px; color:var(--text); }
+.shap-val { font-size:9px; color:var(--green); font-weight:700; }
+.shap-bar-bg { height:3px; background:rgba(255,255,255,0.05); border-radius:1px; overflow:hidden; }
+.shap-bar-fill { height:100%; border-radius:1px; background:linear-gradient(90deg, var(--purple), var(--green)); width:0; transition:width 1.2s ease; }
+
+/* ── FRANJA SELECTOR ── */
+.franja-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.franja-btn {
+  padding:10px 8px; border:1px solid var(--border);
+  background:var(--panel2); cursor:pointer;
+  transition:all 0.2s; text-align:center;
+}
+.franja-btn:hover { border-color:var(--border2); background:var(--panel3); }
+.franja-btn.active { border-color:rgba(0,255,163,0.5); background:rgba(0,255,163,0.07); }
+.fb-icon { font-size:18px; display:block; margin-bottom:4px; }
+.fb-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px; color:var(--bright); letter-spacing:0.05em; }
+.fb-hours { font-size:8px; color:var(--muted2); margin-top:1px; }
+.fb-risk { font-size:8px; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:4px; }
+.fb-risk-dot { width:5px; height:5px; border-radius:50%; }
+
+/* ── LAYERS ── */
+.layer-list { display:flex; flex-direction:column; gap:5px; }
+.layer-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:9px 11px; background:var(--panel2); border:1px solid transparent;
+  cursor:pointer; transition:all 0.2s; user-select:none;
+}
+.layer-item.active { border-color:rgba(0,255,163,0.3); }
+.layer-item:hover { background:var(--panel3); }
+.layer-left { display:flex; align-items:center; gap:9px; }
+.layer-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.layer-info {}
+.layer-name { font-size:10px; color:var(--bright); font-weight:500; }
+.layer-desc { font-size:8px; color:var(--muted2); margin-top:1px; }
+.layer-toggle {
+  width:28px; height:15px; border-radius:8px;
+  background:var(--panel); border:1px solid var(--muted);
+  position:relative; transition:all 0.2s; flex-shrink:0;
+}
+.layer-toggle::after {
+  content:''; position:absolute;
+  width:9px; height:9px; border-radius:50%;
+  background:var(--muted); top:2px; left:2px; transition:all 0.2s;
+}
+.layer-item.active .layer-toggle { background:rgba(0,255,163,0.2); border-color:var(--green); }
+.layer-item.active .layer-toggle::after { background:var(--green); left:15px; box-shadow:0 0 6px var(--green); }
+
+/* ── CLUSTER INFO ── */
+.cluster-info { display:none; }
+.cluster-info.show { display:block; }
+.cluster-empty { font-size:9px; color:var(--muted2); line-height:1.7; }
+.cluster-empty span { color:var(--muted); }
+
+.ci-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+.ci-id { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--bright); line-height:1; }
+.ci-type {
+  font-size:8px; letter-spacing:0.15em; text-transform:uppercase;
+  padding:3px 8px; border:1px solid;
+}
+.ci-type.high { border-color:rgba(255,71,87,0.5); color:var(--red); background:rgba(255,71,87,0.08); }
+.ci-type.paradox { border-color:rgba(255,184,0,0.5); color:var(--amber); background:rgba(255,184,0,0.08); }
+.ci-type.safe { border-color:rgba(0,255,163,0.5); color:var(--green); background:rgba(0,255,163,0.08); }
+
+.ci-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+.ci-box { background:var(--panel2); border:1px solid var(--border); padding:10px; }
+.ci-box-val { font-family:'Bebas Neue',sans-serif; font-size:22px; line-height:1; }
+.ci-box-lbl { font-size:8px; color:var(--muted2); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+.ci-row { display:flex; justify-content:space-between; font-size:9px; padding:4px 0; border-top:1px solid rgba(255,255,255,0.04); }
+.ci-row-l { color:var(--muted2); }
+.ci-row-v { color:var(--text); }
+
+/* ── RISK LEGEND ── */
+.risk-scale { height:6px; border-radius:3px; background:linear-gradient(to right,#22c55e,#eab308,#ef4444,#7f1d1d); margin-bottom:5px; }
+.risk-labels { display:flex; justify-content:space-between; font-size:8px; color:var(--muted2); }
+
+/* ─── MAP ─── */
+.map-wrap { position:relative; }
+#map { width:100%; height:100%; }
+
+/* Custom Leaflet tiles dark */
+.leaflet-tile { filter: brightness(0.45) saturate(0.2) hue-rotate(195deg) contrast(1.1); }
+.leaflet-container { background:#04050e; }
+.leaflet-control-zoom { border:1px solid var(--border) !important; background:var(--panel) !important; }
+.leaflet-control-zoom a { color:var(--muted2) !important; background:transparent !important; border-bottom:1px solid var(--border) !important; }
+.leaflet-control-zoom a:hover { color:var(--green) !important; background:rgba(0,255,163,0.05) !important; }
+
+/* Map overlay badges */
+.map-overlay {
+  position:absolute; z-index:500;
+  pointer-events:none;
+}
+.map-overlay.bottom-right { bottom:16px; right:16px; }
+.map-overlay.top-right { top:16px; right:16px; }
+
+.map-badge-small {
+  background:rgba(4,5,14,0.88); border:1px solid var(--border);
+  backdrop-filter:blur(12px); padding:5px 12px;
+  font-size:8px; color:var(--muted2); letter-spacing:0.08em;
+}
+
+/* Franja overlay indicator */
+.franja-indicator {
+  position:absolute; z-index:500; bottom:16px; left:16px;
+  background:rgba(4,5,14,0.9); border:1px solid rgba(0,255,163,0.3);
+  backdrop-filter:blur(12px); padding:10px 16px;
+  display:flex; align-items:center; gap:10px;
+  pointer-events:none;
+  transition:all 0.4s ease;
+}
+.fi-icon { font-size:20px; }
+.fi-info {}
+.fi-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; color:var(--bright); letter-spacing:0.05em; }
+.fi-hours { font-size:8px; color:var(--muted2); }
+.fi-risk-label { font-size:8px; color:var(--green); margin-top:2px; }
+
+/* Custom tooltip */
+.custom-tt {
+  background:rgba(8,10,23,0.97) !important;
+  border:1px solid rgba(0,255,163,0.3) !important;
+  border-radius:0 !important;
+  color:var(--text) !important;
+  font-family:'JetBrains Mono',monospace !important;
+  font-size:10px !important;
+  padding:8px 12px !important;
+  box-shadow:0 0 20px rgba(0,0,0,0.5) !important;
+}
+.custom-tt::before { display:none !important; }
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+@keyframes countUp { from{opacity:0} to{opacity:1} }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.loading-shimmer {
+  background: linear-gradient(90deg, var(--panel2) 25%, var(--panel3) 50%, var(--panel2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div>
-    <div class="topbar-label">TFM · Master Big Data Science · UNAV 2024–2025</div>
-    <div class="topbar-name">Predicción de Tramos de Concentración de Accidentes — Madrid</div>
-    <div class="topbar-sub">Bouso · González · Montt &nbsp;·&nbsp; Tutores: Miranda Galcerán · El Kadi · Navarro</div>
+<!-- ─── LOADER ─── -->
+<div id="loader">
+  <div class="loader-title">MADRID<br><span>TCA</span></div>
+  <div class="loader-sub">Predicción · Tramos de Concentración de Accidentes</div>
+  <div class="loader-steps">
+    <div class="ls" id="ls1"><span class="ls-icon">◈</span> Cargando dataset · 3.433 registros</div>
+    <div class="ls" id="ls2"><span class="ls-icon">◈</span> Inicializando modelo Stacking (RF + XGB + ElasticNetCV)</div>
+    <div class="ls" id="ls3"><span class="ls-icon">◈</span> Calculando clusters HDBSCAN · Madrid 2022–2024</div>
+    <div class="ls" id="ls4"><span class="ls-icon">◈</span> Cargando valores SHAP · importancia de variables</div>
+    <div class="ls" id="ls5"><span class="ls-icon">◈</span> Renderizando mapa · OpenStreetMap + Leaflet</div>
   </div>
-  <div class="topbar-right">
-    <a href="index.html" target="_blank" style="font-family:'Space Mono',monospace;font-size:9px;border:1px solid rgba(0,229,255,0.35);padding:4px 12px;color:#00e5ff;background:rgba(0,229,255,0.06);text-decoration:none;letter-spacing:0.1em;transition:all 0.2s;" onmouseover="this.style.background='rgba(0,229,255,0.12)'" onmouseout="this.style.background='rgba(0,229,255,0.06)'">← CV</a>
-    <div class="tomtom-badge">EN COLABORACIÓN CON TOMTOM</div>
-    <div class="status-dot"><div class="dot-pulse"></div>Datos reales · Ayto. Madrid 2022–2024</div>
-  </div>
-</div>
-
-<div class="layout">
-  <div class="sidebar">
-
-    <div class="sidebar-section">
-      <div class="sec-label">Modelo final</div>
-      <div class="model-card winner">
-        <div class="model-name">🏆 Stacking Regressor</div>
-        <div class="model-type">RF + XGB → ElasticNetCV (meta-modelo)</div>
-        <div class="metric-row"><span class="metric-name">RMSE</span><span class="metric-val g">0.003975</span></div>
-        <div class="metric-row"><span class="metric-name">MAE</span><span class="metric-val g">0.001895</span></div>
-        <div class="metric-row"><span class="metric-name">R²</span><span class="metric-val g">0.528</span></div>
-        <div class="metric-row"><span class="metric-name">Mejora vs Baseline</span><span class="metric-val g">−51%</span></div>
-      </div>
-      <div class="model-card">
-        <div class="model-name">Baseline (DummyRegressor)</div>
-        <div class="model-type">Media global · cota mínima de referencia</div>
-        <div class="metric-row"><span class="metric-name">RMSE</span><span class="metric-val w">0.008116</span></div>
-        <div class="metric-row"><span class="metric-name">R²</span><span class="metric-val w">≈ 0.00</span></div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sec-label">Capas del mapa</div>
-      <div class="toggle-group">
-        <div class="toggle-item active" id="toggle-heat" onclick="toggleLayer('heat')">
-          <div class="toggle-left">
-            <div class="toggle-color" style="background:radial-gradient(#ef4444,#f59e0b)"></div>
-            <div><div class="toggle-label">Heatmap de riesgo</div><div class="toggle-sub">Probabilidad predicha · Stacking</div></div>
-          </div>
-          <div class="toggle-switch"></div>
-        </div>
-        <div class="toggle-item active" id="toggle-clusters" onclick="toggleLayer('clusters')">
-          <div class="toggle-left">
-            <div class="toggle-color" style="background:#ef4444"></div>
-            <div><div class="toggle-label">Top clusters TCA</div><div class="toggle-sub">HDBSCAN · datos reales 2022–2024</div></div>
-          </div>
-          <div class="toggle-switch"></div>
-        </div>
-        <div class="toggle-item active" id="toggle-paradox" onclick="toggleLayer('paradox')">
-          <div class="toggle-left">
-            <div class="toggle-color" style="background:#f59e0b"></div>
-            <div><div class="toggle-label">Top 5 combinaciones riesgo</div><div class="toggle-sub">Baja intensidad · alta siniestralidad</div></div>
-          </div>
-          <div class="toggle-switch"></div>
-        </div>
-        <div class="toggle-item" id="toggle-safe" onclick="toggleLayer('safe')">
-          <div class="toggle-left">
-            <div class="toggle-color" style="background:#22c55e"></div>
-            <div><div class="toggle-label">Zonas seguras</div><div class="toggle-sub">Alta intensidad · baja siniestralidad</div></div>
-          </div>
-          <div class="toggle-switch"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sec-label">Franja horaria</div>
-      <div class="franja-grid">
-        <div class="franja-btn active" id="franja-manana" onclick="setFranja('manana')">☀️ Mañana<br>06–12h</div>
-        <div class="franja-btn" id="franja-tarde" onclick="setFranja('tarde')">🌤 Almuerzo<br>12–17h</div>
-        <div class="franja-btn" id="franja-salida" onclick="setFranja('salida')">🌆 Salida/noche<br>17–00h ⚠️</div>
-        <div class="franja-btn" id="franja-noche" onclick="setFranja('noche')">🌙 Madrugada<br>00–06h</div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sec-label">Dataset real · 2022–2024</div>
-      <div class="stats-grid">
-        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">3.433</div><div class="stat-lbl">registros modelo</div></div>
-        <div class="stat-box"><div class="stat-num" style="color:var(--danger)">18K+</div><div class="stat-lbl">accidentes hist.</div></div>
-        <div class="stat-box"><div class="stat-num" style="color:var(--safe)">−51%</div><div class="stat-lbl">RMSE vs base</div></div>
-        <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">5.8GB</div><div class="stat-lbl">datos tráfico</div></div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sec-label">SHAP · importancia variables</div>
-      <div class="shap-list">
-        <div class="shap-item">
-          <div class="shap-top"><span class="shap-name">hora_cos (franja horaria)</span><span class="shap-pct">25.4%</span></div>
-          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:100%"></div></div>
-        </div>
-        <div class="shap-item">
-          <div class="shap-top"><span class="shap-name">tipo_entorno: intersección</span><span class="shap-pct">18.7%</span></div>
-          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:74%"></div></div>
-        </div>
-        <div class="shap-item">
-          <div class="shap-top"><span class="shap-name">ángulo intersección</span><span class="shap-pct">16.1%</span></div>
-          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:63%"></div></div>
-        </div>
-        <div class="shap-item">
-          <div class="shap-top"><span class="shap-name">vel_dif (diferencia velocidades)</span><span class="shap-pct">6.9%</span></div>
-          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:27%"></div></div>
-        </div>
-        <div class="shap-item">
-          <div class="shap-top"><span class="shap-name">estado_meteorológico</span><span class="shap-pct">4.9%</span></div>
-          <div class="shap-bar-bg"><div class="shap-bar-fill" style="width:19%"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sec-label">Escala de riesgo</div>
-      <div class="legend-bar"></div>
-      <div class="legend-labels"><span>Bajo (0%)</span><span>Medio</span><span>Alto (39%)</span></div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sec-label">Cluster seleccionado</div>
-      <div class="point-info" id="point-info">
-        <div class="point-title" id="pt-title">—</div>
-        <div class="point-row"><span>Accidentes totales</span><span id="pt-acc">—</span></div>
-        <div class="point-row"><span>Probabilidad predicha</span><span id="pt-prob">—</span></div>
-        <div class="point-row"><span>Tipo de entorno</span><span id="pt-entorno">—</span></div>
-        <div class="point-row"><span>Franja activa</span><span id="pt-franja">—</span></div>
-        <div class="point-row"><span>Índice peligrosidad</span><span id="pt-idx">—</span></div>
-        <div class="point-row"><span>Localización</span><span id="pt-loc" style="max-width:130px;text-align:right;font-size:7px">—</span></div>
-      </div>
-      <div class="no-point" id="no-point">Haz clic en un punto del mapa para ver los datos reales del cluster.</div>
-    </div>
-
-  </div>
-
-  <div style="position:relative">
-    <div id="map"></div>
-    <div class="map-badge">© OpenStreetMap · Leaflet · Datos: Ayto. Madrid + OSM · TFM UNAV 2025 · En colaboración con TomTom</div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+  <div class="loader-metrics" id="loaderMetrics">
+    <div class="lm"><div class="lm-n" style="color:var(--green)">−51%</div><div class="lm-l">RMSE vs base</div></div>
+    <div class="lm"><div class="lm-n" style="color:var(--blue)">0.528</div><div class="lm-l">R² Stacking</div></div>
+    <div class="lm"><div class="lm-n" style="color:var(--amber)">3.4K</div><div class="lm-l">registros</div></div>
+    <div class="lm"><div class="lm-n" style="color:var(--purple)">18K+</div><div class="lm-l">accidentes</div></div>
   </div>
 </div>
+
+<!-- ─── APP ─── -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-badge">TFM · UNAV 2024–2025</div>
+      <div class="tb-title">
+        <div class="tb-name">Predicción de Tramos de Concentración de Accidentes — Madrid</div>
+        <div class="tb-sub">Bouso · González · Montt &nbsp;·&nbsp; Tutores: Miranda Galcerán · El Kadi · Navarro</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-tomtom">× TomTom</div>
+      <div class="tb-live"><div class="pulse"></div>Datos reales · Ayto. Madrid 2022–2024</div>
+      <a class="tb-back" href="cv_luis_gonzalez.html" target="_blank">← CV</a>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+      <!-- MODEL COMPARISON -->
+      <div class="lp-section">
+        <div class="lp-label">Comparativa de modelos</div>
+        <div class="model-versus">
+          <div class="model-card winner">
+            <div class="model-badge w">🏆 Modelo final</div>
+            <div class="model-name">Stacking Regressor</div>
+            <div class="model-metric"><span class="model-metric-label">RMSE</span><span class="model-metric-val g">0.003975</span></div>
+            <div class="model-metric"><span class="model-metric-label">MAE</span><span class="model-metric-val g">0.001895</span></div>
+            <div class="model-metric"><span class="model-metric-label">R²</span><span class="model-metric-val g">0.528</span></div>
+          </div>
+          <div class="vs-sep">VS</div>
+          <div class="model-card">
+            <div class="model-badge b">Baseline</div>
+            <div class="model-name">Dummy Regressor</div>
+            <div class="model-metric"><span class="model-metric-label">RMSE</span><span class="model-metric-val a">0.008116</span></div>
+            <div class="model-metric"><span class="model-metric-label">MAE</span><span class="model-metric-val a">—</span></div>
+            <div class="model-metric"><span class="model-metric-label">R²</span><span class="model-metric-val a">≈ 0.00</span></div>
+          </div>
+        </div>
+        <div class="improvement-badge">
+          <span class="improvement-num">−51%</span>
+          RMSE · mejora sobre baseline · RF + XGB → ElasticNetCV
+        </div>
+      </div>
+
+      <!-- SHAP -->
+      <div class="lp-section">
+        <div class="lp-label">SHAP · Importancia de variables</div>
+        <div class="shap-list" id="shapList">
+          <div class="shap-row">
+            <div class="shap-top"><span class="shap-name">hora_cos (franja horaria)</span><span class="shap-val">25.4%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" data-w="100%"></div></div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-top"><span class="shap-name">tipo_entorno: intersección</span><span class="shap-val">18.7%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" data-w="74%"></div></div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-top"><span class="shap-name">ángulo intersección</span><span class="shap-val">16.1%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" data-w="63%"></div></div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-top"><span class="shap-name">vel_dif (diferencia velocidades)</span><span class="shap-val">6.9%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" data-w="27%"></div></div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-top"><span class="shap-name">estado_meteorológico</span><span class="shap-val">4.9%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" data-w="19%"></div></div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-top"><span class="shap-name">num_carriles</span><span class="shap-val">4.2%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" data-w="17%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FRANJA HORARIA -->
+      <div class="lp-section">
+        <div class="lp-label">Franja horaria</div>
+        <div class="franja-grid">
+          <div class="franja-btn" id="fb-manana" onclick="setFranja('manana',this)">
+            <span class="fb-icon">☀️</span>
+            <div class="fb-name">MAÑANA</div>
+            <div class="fb-hours">06:00 – 12:00</div>
+            <div class="fb-risk"><div class="fb-risk-dot" style="background:#eab308"></div><span style="color:#eab308;font-size:8px">Riesgo moderado</span></div>
+          </div>
+          <div class="franja-btn" id="fb-tarde" onclick="setFranja('tarde',this)">
+            <span class="fb-icon">🌤</span>
+            <div class="fb-name">ALMUERZO</div>
+            <div class="fb-hours">12:00 – 17:00</div>
+            <div class="fb-risk"><div class="fb-risk-dot" style="background:#22c55e"></div><span style="color:#22c55e;font-size:8px">Riesgo bajo</span></div>
+          </div>
+          <div class="franja-btn active" id="fb-salida" onclick="setFranja('salida',this)">
+            <span class="fb-icon">🌆</span>
+            <div class="fb-name">SALIDA</div>
+            <div class="fb-hours">17:00 – 00:00</div>
+            <div class="fb-risk"><div class="fb-risk-dot" style="background:#ef4444"></div><span style="color:#ef4444;font-size:8px">⚠ Riesgo alto</span></div>
+          </div>
+          <div class="franja-btn" id="fb-noche" onclick="setFranja('noche',this)">
+            <span class="fb-icon">🌙</span>
+            <div class="fb-name">MADRUGADA</div>
+            <div class="fb-hours">00:00 – 06:00</div>
+            <div class="fb-risk"><div class="fb-risk-dot" style="background:#6b74a0"></div><span style="color:#6b74a0;font-size:8px">Riesgo bajo</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAYERS -->
+      <div class="lp-section">
+        <div class="lp-label">Capas del mapa</div>
+        <div class="layer-list">
+          <div class="layer-item active" id="lay-heat" onclick="toggleLayer('heat',this)">
+            <div class="layer-left">
+              <div class="layer-dot" style="background:radial-gradient(circle,#ef4444,#f59e0b)"></div>
+              <div class="layer-info">
+                <div class="layer-name">Heatmap de riesgo</div>
+                <div class="layer-desc">Probabilidad predicha · Stacking</div>
+              </div>
+            </div>
+            <div class="layer-toggle"></div>
+          </div>
+          <div class="layer-item active" id="lay-clusters" onclick="toggleLayer('clusters',this)">
+            <div class="layer-left">
+              <div class="layer-dot" style="background:#ef4444"></div>
+              <div class="layer-info">
+                <div class="layer-name">Top clusters TCA</div>
+                <div class="layer-desc">HDBSCAN · Top 10 por accidentes</div>
+              </div>
+            </div>
+            <div class="layer-toggle"></div>
+          </div>
+          <div class="layer-item active" id="lay-paradox" onclick="toggleLayer('paradox',this)">
+            <div class="layer-left">
+              <div class="layer-dot" style="background:#ffb800"></div>
+              <div class="layer-info">
+                <div class="layer-name">Top 5 combinaciones riesgo</div>
+                <div class="layer-desc">Baja intensidad · alta siniestralidad</div>
+              </div>
+            </div>
+            <div class="layer-toggle"></div>
+          </div>
+          <div class="layer-item" id="lay-safe" onclick="toggleLayer('safe',this)">
+            <div class="layer-left">
+              <div class="layer-dot" style="background:#00ffa3"></div>
+              <div class="layer-info">
+                <div class="layer-name">Zonas seguras</div>
+                <div class="layer-desc">Alta intensidad · baja siniestralidad</div>
+              </div>
+            </div>
+            <div class="layer-toggle"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCALE -->
+      <div class="lp-section">
+        <div class="lp-label">Escala de riesgo</div>
+        <div class="risk-scale"></div>
+        <div class="risk-labels"><span>Bajo</span><span>Moderado</span><span>Alto</span><span>Crítico</span></div>
+      </div>
+
+      <!-- CLUSTER INFO -->
+      <div class="lp-section" style="flex:1">
+        <div class="lp-label">Cluster seleccionado</div>
+        <div id="clusterEmpty" class="cluster-empty">
+          <span>▸</span> Haz clic en cualquier<br>
+          cluster del mapa para<br>
+          ver sus datos reales.
+        </div>
+        <div id="clusterInfo" class="cluster-info">
+          <div class="ci-header">
+            <div class="ci-id" id="ci-id">—</div>
+            <div class="ci-type" id="ci-type-badge">—</div>
+          </div>
+          <div class="ci-grid">
+            <div class="ci-box">
+              <div class="ci-box-val" id="ci-acc" style="color:var(--red)">—</div>
+              <div class="ci-box-lbl">Accidentes</div>
+            </div>
+            <div class="ci-box">
+              <div class="ci-box-val" id="ci-prob" style="color:var(--green)">—</div>
+              <div class="ci-box-lbl">Prob. predicha</div>
+            </div>
+          </div>
+          <div class="ci-row"><span class="ci-row-l">Índice peligrosidad</span><span class="ci-row-v" id="ci-idx">—</span></div>
+          <div class="ci-row"><span class="ci-row-l">Tipo de entorno</span><span class="ci-row-v" id="ci-entorno">—</span></div>
+          <div class="ci-row"><span class="ci-row-l">Localización</span><span class="ci-row-v" id="ci-loc" style="font-size:8px;max-width:160px;text-align:right">—</span></div>
+          <div class="ci-row"><span class="ci-row-l">Franja activa</span><span class="ci-row-v" id="ci-franja">—</span></div>
+        </div>
+      </div>
+
+    </div><!-- /left-panel -->
+
+    <!-- MAP -->
+    <div class="map-wrap">
+      <div id="map"></div>
+
+      <!-- Franja indicator overlay -->
+      <div class="franja-indicator" id="franjaIndicator">
+        <div class="fi-icon" id="fi-icon">🌆</div>
+        <div class="fi-info">
+          <div class="fi-name" id="fi-name">HORA SALIDA</div>
+          <div class="fi-hours" id="fi-hours">17:00 – 00:00h</div>
+          <div class="fi-risk-label" id="fi-risk">⚠ Franja de mayor siniestralidad</div>
+        </div>
+      </div>
+
+      <div class="map-overlay bottom-right">
+        <div class="map-badge-small">© OpenStreetMap · Leaflet · Datos: Ayto. Madrid · OSM · TFM UNAV 2025</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
 
 <script>
-// Datos reales del TFM (Cuadro 7 - Top clusters por accidentes)
-const topClusters = [
-  {id:2746,lat:40.4400,lng:-3.6890,acc:268,loc:'Paseo Castellana · Joaquín Costa',prob:0.045,entorno:'Intersección',idx:16.80},
-  {id:1994,lat:40.4520,lng:-3.7070,acc:162,loc:'Av. Memoria · Frente Farola',prob:0.032,entorno:'Intersección',idx:12.54},
-  {id:3926,lat:40.4230,lng:-3.6640,acc:159,loc:'C/ Alcalá · Puente de Ventas',prob:0.028,entorno:'Intersección',idx:10.20},
-  {id:1980,lat:40.4410,lng:-3.7130,acc:158,loc:'Plaza Cristo Rey · S. Francisco de Sales',prob:0.031,entorno:'Rotonda',idx:9.80},
-  {id:3566,lat:40.4088,lng:-3.6921,acc:152,loc:'Plaza Emp. Carlos V · Pº Sta. M. de la Cabeza',prob:0.041,entorno:'Intersección',idx:9.50},
-  {id:3450,lat:40.4530,lng:-3.6770,acc:150,loc:'Av. América · C/ Cartagena',prob:0.039,entorno:'Intersección',idx:9.20},
-  {id:3984,lat:40.4193,lng:-3.7040,acc:140,loc:'C/ Gran Vía · San Bernardo',prob:0.036,entorno:'Intersección',idx:8.90},
-  {id:1776,lat:40.4370,lng:-3.6810,acc:130,loc:'C/ Príncipe de Vergara · Pl. Cataluña',prob:0.027,entorno:'Intersección',idx:7.80},
-  {id:3679,lat:40.3985,lng:-3.6720,acc:124,loc:'C/ Méndez Álvaro · Pedro Bosch',prob:0.033,entorno:'Nada',idx:7.20},
-  {id:4052,lat:40.3940,lng:-3.6690,acc:116,loc:'C/ Méndez Álvaro · Autovía M',prob:0.044,entorno:'Nada',idx:7.10},
+// ─── DATA ───
+const CLUSTERS = [
+  {id:2746, lat:40.4400, lng:-3.6890, acc:268, prob:0.045, entorno:'Intersección', idx:16.80, loc:'Paseo Castellana · Joaquín Costa'},
+  {id:1994, lat:40.4520, lng:-3.7070, acc:162, prob:0.032, entorno:'Intersección', idx:12.54, loc:'Av. Memoria · Frente Farola'},
+  {id:3926, lat:40.4230, lng:-3.6640, acc:159, prob:0.028, entorno:'Intersección', idx:10.20, loc:'C/ Alcalá · Puente de Ventas'},
+  {id:1980, lat:40.4410, lng:-3.7130, acc:158, prob:0.031, entorno:'Rotonda',      idx:9.80,  loc:'Plaza Cristo Rey · S. Francisco Sales'},
+  {id:3566, lat:40.4088, lng:-3.6921, acc:152, prob:0.041, entorno:'Intersección', idx:9.50,  loc:'Pl. Emp. Carlos V · Pº Sta. Mª Cabeza'},
+  {id:3450, lat:40.4530, lng:-3.6770, acc:150, prob:0.039, entorno:'Intersección', idx:9.20,  loc:'Av. América · C/ Cartagena'},
+  {id:3984, lat:40.4193, lng:-3.7040, acc:140, prob:0.036, entorno:'Intersección', idx:8.90,  loc:'C/ Gran Vía · San Bernardo'},
+  {id:1776, lat:40.4370, lng:-3.6810, acc:130, prob:0.027, entorno:'Intersección', idx:7.80,  loc:'Príncipe de Vergara · Pl. Cataluña'},
+  {id:3679, lat:40.3985, lng:-3.6720, acc:124, prob:0.033, entorno:'Tramo',        idx:7.20,  loc:'C/ Méndez Álvaro · Pedro Bosch'},
+  {id:4052, lat:40.3940, lng:-3.6690, acc:116, prob:0.044, entorno:'Tramo',        idx:7.10,  loc:'C/ Méndez Álvaro · Autovía M'},
 ];
 
-// Top 5 combinaciones más peligrosas (Figura 47 del TFM - intersección + despejado + noche)
-const paradoxZones = [
-  {lat:40.4390,lng:-3.7210,acc:25,prob:0.391,entorno:'Intersección',franja:'Noche',carriles:1,loc:'Alta prob. · intersec. 1 carril · nocturna',idx:16.80},
-  {lat:40.4190,lng:-3.7250,acc:40,prob:0.155,entorno:'Intersección',franja:'Noche',carriles:0,loc:'Intersección nocturna · zona oeste',idx:12.54},
-  {lat:40.4050,lng:-3.7380,acc:33,prob:0.155,entorno:'Intersección',franja:'Noche',carriles:2,loc:'Carabanchel · baja intensidad',idx:5.63},
-  {lat:40.4620,lng:-3.6740,acc:25,prob:0.105,entorno:'Intersección',franja:'Salida/noche',carriles:2,loc:'Hortaleza · salida laboral',idx:4.79},
-  {lat:40.4280,lng:-3.6960,acc:21,prob:0.086,entorno:'Intersección',franja:'Mañana',carriles:0,loc:'Ciudad Lineal · punta mañana',idx:4.21},
+const PARADOX = [
+  {id:'P1', lat:40.4390, lng:-3.7210, acc:25, prob:0.391, entorno:'Intersección', idx:16.80, loc:'Alta prob · intersec. 1 carril · nocturna'},
+  {id:'P2', lat:40.4190, lng:-3.7250, acc:40, prob:0.155, entorno:'Intersección', idx:12.54, loc:'Intersección nocturna · zona oeste'},
+  {id:'P3', lat:40.4050, lng:-3.7380, acc:33, prob:0.155, entorno:'Intersección', idx:5.63,  loc:'Carabanchel · baja intensidad'},
+  {id:'P4', lat:40.4620, lng:-3.6740, acc:25, prob:0.105, entorno:'Intersección', idx:4.79,  loc:'Hortaleza · salida laboral'},
+  {id:'P5', lat:40.4280, lng:-3.6960, acc:21, prob:0.086, entorno:'Intersección', idx:4.21,  loc:'Ciudad Lineal · punta mañana'},
 ];
 
-// Zonas seguras (paradoja inversa: alta intensidad, baja siniestralidad)
-const safeZones = [
-  {lat:40.4490,lng:-3.6920,acc:8,loc:'Av. Burgos · alta intensidad controlada',prob:0.003},
-  {lat:40.4150,lng:-3.6820,acc:12,loc:'A-2 acceso · bien gestionado',prob:0.004},
-  {lat:40.4580,lng:-3.7200,acc:10,loc:'Nudo Manoteras · señalización óptima',prob:0.003},
+const SAFE = [
+  {id:'S1', lat:40.4490, lng:-3.6920, acc:8,  prob:0.003, entorno:'Alta intensidad', idx:'—', loc:'Av. Burgos · alta intensidad controlada'},
+  {id:'S2', lat:40.4150, lng:-3.6820, acc:12, prob:0.004, entorno:'Alta intensidad', idx:'—', loc:'A-2 acceso · bien gestionado'},
+  {id:'S3', lat:40.4580, lng:-3.7200, acc:10, prob:0.003, entorno:'Alta intensidad', idx:'—', loc:'Nudo Manoteras · señalización óptima'},
 ];
 
-const franjaFactors = {
-  manana:{factor:1.2,label:'Mañana 06–12h'},
-  tarde:{factor:1.0,label:'Almuerzo/tarde 12–17h'},
-  salida:{factor:1.5,label:'Salida/noche 17–00h'},
-  noche:{factor:0.65,label:'Madrugada 00–06h'}
+const FRANJAS = {
+  manana: {icon:'☀️', name:'HORA MAÑANA',  hours:'06:00 – 12:00h', risk:'Riesgo moderado',   factor:1.2, riskColor:'#eab308'},
+  tarde:  {icon:'🌤', name:'ALMUERZO',      hours:'12:00 – 17:00h', risk:'Riesgo bajo',        factor:1.0, riskColor:'#22c55e'},
+  salida: {icon:'🌆', name:'HORA SALIDA',   hours:'17:00 – 00:00h', risk:'⚠ Mayor siniestralidad', factor:1.5, riskColor:'#ef4444'},
+  noche:  {icon:'🌙', name:'MADRUGADA',     hours:'00:00 – 06:00h', risk:'Riesgo bajo',        factor:0.65,riskColor:'#6b74a0'},
 };
 
-let currentFranja = 'manana';
+let currentFranja = 'salida';
+let layerState = { heat:true, clusters:true, paradox:true, safe:false };
+let heatLayer=null, clusterGroup=null, paradoxGroup=null, safeGroup=null;
+
+// ─── MAP INIT ───
+const map = L.map('map', { center:[40.4168,-3.7038], zoom:13, zoomControl:true, attributionControl:false });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(map);
+L.control.attribution({ prefix:false, position:'bottomright' }).addTo(map);
 
 function buildHeatData(franja) {
-  const f = franjaFactors[franja].factor;
+  const f = FRANJAS[franja].factor;
   const pts = [];
-  topClusters.forEach(c => {
+  CLUSTERS.forEach(c => {
     pts.push([c.lat, c.lng, Math.min(1, c.prob * f * 10)]);
-    for (let i=0;i<10;i++) pts.push([c.lat+(Math.random()-.5)*0.03,c.lng+(Math.random()-.5)*0.03,Math.min(1,c.prob*f*7*Math.random())]);
+    for(let i=0;i<12;i++) pts.push([
+      c.lat+(Math.random()-.5)*0.025,
+      c.lng+(Math.random()-.5)*0.025,
+      Math.min(1, c.prob * f * 8 * Math.random())
+    ]);
   });
-  paradoxZones.forEach(z => pts.push([z.lat,z.lng,Math.min(1,z.prob*f*2.5)]));
-  // M-30 corredor real
-  [[40.396,-3.700],[40.402,-3.688],[40.410,-3.682],[40.420,-3.680],[40.430,-3.685],[40.438,-3.695],[40.442,-3.710],[40.438,-3.725],[40.428,-3.738],[40.410,-3.738],[40.397,-3.727]].forEach(p=>pts.push([p[0],p[1],0.5*f]));
+  PARADOX.forEach(z => pts.push([z.lat, z.lng, Math.min(1, z.prob * f * 2.2)]));
+  // M-30
+  [[40.396,-3.700],[40.402,-3.688],[40.410,-3.682],[40.420,-3.680],[40.430,-3.685],
+   [40.438,-3.695],[40.442,-3.710],[40.438,-3.725],[40.428,-3.738],[40.410,-3.738],[40.397,-3.727]]
+  .forEach(p=>pts.push([p[0],p[1],0.48*f]));
   return pts;
 }
 
-const map = L.map('map',{center:[40.4168,-3.7038],zoom:13,zoomControl:true});
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
-
-let heatLayer=null;
-const clusterLayer=L.layerGroup();
-const paradoxLayer=L.layerGroup();
-const safeLayer=L.layerGroup();
-const layerState={heat:{active:true},clusters:{active:true,layer:clusterLayer},paradox:{active:true,layer:paradoxLayer},safe:{active:false,layer:safeLayer}};
+function showClusterInfo(data, type) {
+  document.getElementById('clusterEmpty').style.display='none';
+  const ci = document.getElementById('clusterInfo');
+  ci.classList.add('show');
+  document.getElementById('ci-id').textContent = 'Cluster #'+data.id;
+  document.getElementById('ci-acc').textContent = data.acc;
+  document.getElementById('ci-prob').textContent = (data.prob*100).toFixed(1)+'%';
+  document.getElementById('ci-idx').textContent = typeof data.idx==='number' ? data.idx.toFixed(2) : data.idx;
+  document.getElementById('ci-entorno').textContent = data.entorno;
+  document.getElementById('ci-loc').textContent = data.loc;
+  document.getElementById('ci-franja').textContent = FRANJAS[currentFranja].name;
+  const badge = document.getElementById('ci-type-badge');
+  badge.className = 'ci-type '+type;
+  badge.textContent = type==='high'?'ALTO RIESGO': type==='paradox'?'PARADOJA':'SEGURO';
+}
 
 function buildMarkers() {
-  clusterLayer.clearLayers(); paradoxLayer.clearLayers(); safeLayer.clearLayers();
-  const fl = franjaFactors[currentFranja].label;
-  const ff = franjaFactors[currentFranja].factor;
+  if(clusterGroup) map.removeLayer(clusterGroup);
+  if(paradoxGroup) map.removeLayer(paradoxGroup);
+  if(safeGroup)    map.removeLayer(safeGroup);
 
-  topClusters.forEach(c=>{
-    const prob = Math.min(0.99, c.prob*ff);
-    const size = 5+Math.sqrt(c.acc)*0.45;
-    const circle = L.circleMarker([c.lat,c.lng],{radius:size,color:'#ef4444',weight:2,opacity:0.9,fillOpacity:0.3,fillColor:'#ef4444'});
-    circle.on('click',()=>showInfo(`Cluster ${c.id}`,c.acc,(prob*100).toFixed(1)+'%',c.entorno,fl,c.idx.toFixed(2),c.loc));
-    clusterLayer.addLayer(circle);
+  const f = FRANJAS[currentFranja].factor;
+  clusterGroup = L.layerGroup();
+  paradoxGroup = L.layerGroup();
+  safeGroup    = L.layerGroup();
+
+  CLUSTERS.forEach(c => {
+    const prob = Math.min(0.99, c.prob * f);
+    const r = 5 + Math.sqrt(c.acc) * 0.5;
+    const alpha = 0.25 + (c.acc/268)*0.4;
+    const circle = L.circleMarker([c.lat,c.lng], {
+      radius:r, color:'#ef4444', weight:1.5,
+      opacity:0.9, fillOpacity:alpha, fillColor:'#ef4444'
+    });
+    circle.bindTooltip(
+      `<b>Cluster #${c.id}</b><br>${c.acc} accidentes · ${(prob*100).toFixed(1)}% prob.<br><span style="color:#6b74a0;font-size:9px">${c.loc}</span>`,
+      {className:'custom-tt', direction:'top'}
+    );
+    circle.on('click', ()=>showClusterInfo(c,'high'));
+    clusterGroup.addLayer(circle);
   });
 
-  paradoxZones.forEach((z,i)=>{
-    const circle = L.circleMarker([z.lat,z.lng],{radius:7,color:'#f59e0b',weight:2,opacity:0.9,fillOpacity:0.4,fillColor:'#f59e0b'});
-    circle.on('click',()=>showInfo(`Top riesgo #${i+1}`,z.acc,(z.prob*100).toFixed(1)+'%',z.entorno,z.franja,z.idx.toFixed(2),z.loc));
-    paradoxLayer.addLayer(circle);
+  PARADOX.forEach(z => {
+    const circle = L.circleMarker([z.lat,z.lng], {
+      radius:7, color:'#ffb800', weight:2,
+      opacity:0.9, fillOpacity:0.35, fillColor:'#ffb800'
+    });
+    circle.bindTooltip(
+      `<b>${z.id} · Zona paradoja</b><br>${z.acc} acc · ${(z.prob*100).toFixed(1)}% prob.<br><span style="color:#6b74a0;font-size:9px">${z.loc}</span>`,
+      {className:'custom-tt', direction:'top'}
+    );
+    circle.on('click', ()=>showClusterInfo(z,'paradox'));
+    paradoxGroup.addLayer(circle);
   });
 
-  safeZones.forEach(z=>{
-    const circle = L.circleMarker([z.lat,z.lng],{radius:6,color:'#22c55e',weight:2,opacity:0.8,fillOpacity:0.25,fillColor:'#22c55e'});
-    circle.on('click',()=>showInfo('Zona segura',z.acc,(z.prob*100).toFixed(1)+'%','Alta intensidad',fl,'—',z.loc));
-    safeLayer.addLayer(circle);
+  SAFE.forEach(z => {
+    const circle = L.circleMarker([z.lat,z.lng], {
+      radius:6, color:'#00ffa3', weight:1.5,
+      opacity:0.8, fillOpacity:0.2, fillColor:'#00ffa3'
+    });
+    circle.bindTooltip(
+      `<b>${z.id} · Zona segura</b><br>${z.acc} acc · ${(z.prob*100).toFixed(1)}% prob.<br><span style="color:#6b74a0;font-size:9px">${z.loc}</span>`,
+      {className:'custom-tt', direction:'top'}
+    );
+    circle.on('click', ()=>showClusterInfo(z,'safe'));
+    safeGroup.addLayer(circle);
   });
+
+  if(layerState.clusters) clusterGroup.addTo(map);
+  if(layerState.paradox)  paradoxGroup.addTo(map);
+  if(layerState.safe)     safeGroup.addTo(map);
 }
 
 function buildHeat() {
   if(heatLayer) map.removeLayer(heatLayer);
-  heatLayer=L.heatLayer(buildHeatData(currentFranja),{radius:30,blur:24,maxZoom:16,gradient:{0.2:'#22c55e',0.5:'#eab308',0.75:'#ef4444',1.0:'#7f1d1d'}});
-  if(layerState.heat.active) heatLayer.addTo(map);
+  heatLayer = L.heatLayer(buildHeatData(currentFranja), {
+    radius:32, blur:26, maxZoom:16,
+    gradient:{0.15:'#1a472a', 0.35:'#22c55e', 0.55:'#eab308', 0.75:'#ef4444', 1.0:'#7f1d1d'}
+  });
+  if(layerState.heat) heatLayer.addTo(map);
 }
 
-function init(){buildMarkers();buildHeat();if(layerState.clusters.active)clusterLayer.addTo(map);if(layerState.paradox.active)paradoxLayer.addTo(map);if(layerState.safe.active)safeLayer.addTo(map);}
-init();
-
-function toggleLayer(name){
-  const s=layerState[name]; s.active=!s.active;
-  document.getElementById('toggle-'+name).classList.toggle('active',s.active);
-  if(name==='heat'){if(s.active)heatLayer.addTo(map);else map.removeLayer(heatLayer);}
-  else{if(s.active)s.layer.addTo(map);else map.removeLayer(s.layer);}
+function updateFranjaOverlay(f) {
+  const data = FRANJAS[f];
+  document.getElementById('fi-icon').textContent   = data.icon;
+  document.getElementById('fi-name').textContent   = data.name;
+  document.getElementById('fi-hours').textContent  = data.hours;
+  const riskEl = document.getElementById('fi-risk');
+  riskEl.textContent = data.risk;
+  riskEl.style.color = data.riskColor;
 }
 
-function setFranja(f){
-  currentFranja=f;
+function setFranja(f, el) {
+  currentFranja = f;
   document.querySelectorAll('.franja-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('franja-'+f).classList.add('active');
-  buildMarkers(); buildHeat();
-  Object.keys(layerState).forEach(k=>{if(k!=='heat'&&layerState[k].active)layerState[k].layer.addTo(map);});
+  el.classList.add('active');
+  updateFranjaOverlay(f);
+  buildHeat();
+  buildMarkers();
 }
 
-function showInfo(title,acc,prob,entorno,franja,idx,loc){
-  document.getElementById('point-info').classList.add('visible');
-  document.getElementById('no-point').style.display='none';
-  document.getElementById('pt-title').textContent=title;
-  document.getElementById('pt-acc').textContent=acc;
-  document.getElementById('pt-prob').textContent=prob;
-  document.getElementById('pt-entorno').textContent=entorno;
-  document.getElementById('pt-franja').textContent=franja;
-  document.getElementById('pt-idx').textContent=idx;
-  document.getElementById('pt-loc').textContent=loc;
+function toggleLayer(name, el) {
+  layerState[name] = !layerState[name];
+  el.classList.toggle('active', layerState[name]);
+  if(name==='heat')     { layerState.heat     ? heatLayer.addTo(map)     : map.removeLayer(heatLayer); }
+  if(name==='clusters') { layerState.clusters ? clusterGroup.addTo(map)  : map.removeLayer(clusterGroup); }
+  if(name==='paradox')  { layerState.paradox  ? paradoxGroup.addTo(map)  : map.removeLayer(paradoxGroup); }
+  if(name==='safe')     { layerState.safe     ? safeGroup.addTo(map)     : map.removeLayer(safeGroup); }
 }
 
-// Top calles (Cuadro 6 del TFM)
-[{lat:40.4193,lng:-3.7040,name:'C/ Gran Vía',acc:390},{lat:40.4400,lng:-3.6890,name:'Paseo Castellana',acc:971},{lat:40.4230,lng:-3.6640,name:'C/ Alcalá',acc:1122},{lat:40.3985,lng:-3.6720,name:'Méndez Álvaro / M-30',acc:500},{lat:40.4530,lng:-3.6770,name:'Av. América',acc:300},{lat:40.4168,lng:-3.7038,name:'C/ Bravo Murillo',acc:400}].forEach(s=>{
-  L.circleMarker([s.lat,s.lng],{radius:3,color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:1,weight:0}).bindTooltip(`<b>${s.name}</b><br>${s.acc} accidentes (2022–2024)`,{permanent:false,direction:'top',className:'custom-tooltip'}).addTo(map);
+// Top calles tooltips
+[
+  {lat:40.4193,lng:-3.7040,name:'C/ Gran Vía',acc:390},
+  {lat:40.4400,lng:-3.6890,name:'Paseo Castellana',acc:971},
+  {lat:40.4230,lng:-3.6640,name:'C/ Alcalá',acc:1122},
+  {lat:40.3985,lng:-3.6720,name:'M-30 · Méndez Álvaro',acc:500},
+  {lat:40.4530,lng:-3.6770,name:'Av. América',acc:300},
+].forEach(s => {
+  L.circleMarker([s.lat,s.lng],{radius:2.5,color:'#ffb800',fillColor:'#ffb800',fillOpacity:1,weight:0})
+   .bindTooltip(`<b>${s.name}</b><br><span style="color:#6b74a0">${s.acc} accidentes históricos</span>`,{className:'custom-tt',direction:'top'})
+   .addTo(map);
 });
+
+// ─── BOOT SEQUENCE ───
+function boot() {
+  const steps = [
+    {id:'ls1', delay:200,  pct:20},
+    {id:'ls2', delay:700,  pct:40},
+    {id:'ls3', delay:1200, pct:60},
+    {id:'ls4', delay:1700, pct:80},
+    {id:'ls5', delay:2100, pct:100},
+  ];
+  const bar = document.getElementById('loaderBar');
+  steps.forEach((s,i) => {
+    setTimeout(() => {
+      const el = document.getElementById(s.id);
+      el.classList.add('show');
+      bar.style.width = s.pct+'%';
+      if(i>0) document.getElementById(steps[i-1].id).classList.add('done');
+      if(i===steps.length-1) {
+        el.classList.add('done');
+        document.getElementById('loaderMetrics').classList.add('show');
+        setTimeout(launchApp, 900);
+      }
+    }, s.delay);
+  });
+}
+
+function launchApp() {
+  document.getElementById('loader').classList.add('out');
+  setTimeout(() => {
+    document.getElementById('loader').style.display='none';
+    document.getElementById('app').classList.add('show');
+    buildHeat();
+    buildMarkers();
+    updateFranjaOverlay(currentFranja);
+    // Animate SHAP bars
+    setTimeout(() => {
+      document.querySelectorAll('.shap-bar-fill').forEach(b => {
+        b.style.width = b.dataset.w;
+      });
+    }, 400);
+  }, 800);
+}
+
+boot();
 </script>
 </body>
 </html>
